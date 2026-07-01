@@ -124,6 +124,11 @@
   .node.locked .disc { background: linear-gradient(#8a94a0,#59626d); color: #cfd6dd; border-color: #cfd6dd; box-shadow: 0 5px 0 #3d444d,0 8px 14px rgba(0,0,0,.4); }
   .node .stars { position: absolute; top: -18px; left: 50%; transform: translateX(-50%); display: flex; gap: 1px; }
   .node .stars img { width: 14px; height: 14px; object-fit: contain; }
+  .node .stars img.off, #overlay .ovstars img.off { opacity: .32; filter: grayscale(1); }
+  #overlay .ovstars { display: flex; gap: 8px; justify-content: center; margin: 4px 0 10px; }
+  #overlay .ovstars img { width: 40px; height: 40px; object-fit: contain; }
+  #overlay .ovstars img.on { animation: starpop .4s ease both; }
+  @keyframes starpop { 0% { transform: scale(0) rotate(-30deg); } 70% { transform: scale(1.25); } 100% { transform: scale(1); } }
   .node .badge { position: absolute; top: -26px; left: 50%; transform: translateX(-50%); padding: 2px 9px; border-radius: 8px; background: #3fae2a; border: 2px solid #eaffcf; color: #fff; font-size: 10px; font-weight: 900; white-space: nowrap; box-shadow: 0 2px 5px rgba(0,0,0,.35); }
   .node .lk { width: 30px; height: 30px; object-fit: contain; }
   #mapCta { position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); z-index: 3; padding: 11px 34px; border-radius: 18px; background: linear-gradient(#ffd868,#f2a531); border: 3px solid #b9742a; box-shadow: 0 5px 0 #9c5f1f,0 9px 16px rgba(0,0,0,.35); color: #5a3410; font-size: 20px; font-weight: 900; cursor: pointer; }

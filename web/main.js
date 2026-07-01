@@ -63,9 +63,11 @@
   let grade = '';   // 当前关卡的色调滤镜
 
   const PKEY = 'wttl_prog';
-  const prog = () => { try { return JSON.parse(localStorage.getItem(PKEY)) || { cleared: 0, seen: [] }; } catch { return { cleared: 0, seen: [] }; } };
+  const prog = () => { try { const p = JSON.parse(localStorage.getItem(PKEY)) || {}; return { cleared: p.cleared || 0, seen: p.seen || [], stars: p.stars || {} }; } catch { return { cleared: 0, seen: [], stars: {} }; } };
   const save = (p) => localStorage.setItem(PKEY, JSON.stringify(p));
-  const clear = (n) => { const p = prog(); if (n > p.cleared) { p.cleared = n; save(p); } };
+  const clear = (n, stars) => { const p = prog(); if (n > p.cleared) p.cleared = n; if (stars != null && stars > (p.stars[n] || 0)) p.stars[n] = stars; save(p); };
+  // 星级：按剩余生命评定（满/半/破）
+  const starsFor = (lives, startLives) => { const f = lives / (startLives || 20); return f >= 0.9 ? 3 : f >= 0.5 ? 2 : 1; };
   // 钻石经济：通关获得，商店购买皮肤消费
   const GKEY = 'wttl_gems';
   const gems = () => { try { return parseInt(localStorage.getItem(GKEY), 10) || 0; } catch { return 0; } };
@@ -180,7 +182,7 @@
       el.className = 'node ' + (cleared ? 'cleared' : current ? 'current' : 'locked');
       el.style.left = (vX / 1280 * 100) + '%'; el.style.top = (vY / 720 * 100) + '%';
       let inner = '';
-      if (cleared) inner += `<div class="stars">${'<img src="assets/ic_star.png" onerror="this.style.display=\'none\'">'.repeat(3)}</div>`;
+      if (cleared) { const st = p.stars[n] || 1; inner += `<div class="stars">${[1,2,3].map((i)=>`<img src="assets/ic_star.png" class="${i<=st?'on':'off'}" onerror="this.style.display='none'">`).join('')}</div>`; }
       if (current) inner += `<div class="badge">当前</div>`;
       const face = locked ? `<img class="lk" src="assets/ic_lock.png" onerror="this.textContent='🔒'">` : (n);
       inner += `<div class="disc">${face}</div>`;
@@ -492,7 +494,11 @@
   }
   function render() {
     ctx.clearRect(0, 0, tf.W, tf.H);
-    const bg = IMG[level.bg]; if (bg) ctx.drawImage(bg, vx(0), vy(0), vk(C.VW), vk(C.VH)); else { ctx.fillStyle = '#2c3a26'; ctx.fillRect(vx(0), vy(0), vk(C.VW), vk(C.VH)); }
+    // 基地受击屏震（衰减；背景多画一圈防止边缘露白）
+    const shT = Math.max(0, 1 - (anim - baseHitAt) / 0.32), shm = shT * shT * vk(7);
+    ctx.save();
+    if (shm > 0.2) ctx.translate(Math.sin(anim * 92) * shm, Math.cos(anim * 71) * shm);
+    const bg = IMG[level.bg]; if (bg) ctx.drawImage(bg, vx(0) - 12, vy(0) - 12, vk(C.VW) + 24, vk(C.VH) + 24); else { ctx.fillStyle = '#2c3a26'; ctx.fillRect(vx(0) - 12, vy(0) - 12, vk(C.VW) + 24, vk(C.VH) + 24); }
     drawPlatform();
     const s = state;
     // 怪物入口传送门（每主题一套图；缺失则画暗色洞口兜底）
@@ -619,6 +625,7 @@
     if (s.hero) { ctx.beginPath(); ctx.ellipse(vx(s.hero.x), vy(s.hero.y), vk(24), vk(10), 0, 0, 7); ctx.fillStyle = 'rgba(182,255,90,.22)'; ctx.fill(); drawSprite('hero_ranger', s.hero.x, s.hero.y, 92, 0.86); }
     drawBase();
     for (const f of s.floats) { ctx.globalAlpha = Math.max(0, 1 - f.t); ctx.fillStyle = f.color; ctx.font = `bold ${vk(18)}px sans-serif`; ctx.textAlign = 'center'; ctx.fillText(f.text, vx(f.x), vy(f.y) - vk(26) - f.t * vk(20)); ctx.globalAlpha = 1; }
+    ctx.restore();
     drawMenu();
   }
 
@@ -641,16 +648,20 @@
     if (hud.p !== s.phase) {
       hud.p = s.phase;
       if (s.phase === 'won' || s.phase === 'lost') {
-        let reward = 0;
-        if (s.phase === 'won') { const first = level.id > prog().cleared; reward = first ? 10 : 3; addGems(reward); addChest(1); clear(level.id); }   // 胜利赠 1 宝箱
+        let reward = 0, stars = 0;
+        if (s.phase === 'won') { const first = level.id > prog().cleared; stars = starsFor(s.lives, level.startLives); const best = prog().stars[level.id] || 0; reward = (first ? 10 : 3) + (stars > best ? (stars - best) * 2 : 0); addGems(reward); addChest(1); clear(level.id, stars); }   // 胜利赠1宝箱 + 星级奖励钻石
         const showBox = () => {
           $('overlay').style.display = 'flex';
           $('ovT').innerHTML = s.phase === 'won'
             ? '<img class="ovic" src="assets/ic_win.png" onerror="this.style.display=\'none\'"> 过关！'
             : '<img class="ovic" src="assets/ic_lose.png" onerror="this.style.display=\'none\'"> 失败';
-          $('ovS').innerHTML = s.phase === 'won'
+          // 星级条（点亮 stars 颗，共 3 颗）
+          const starRow = s.phase === 'won'
+            ? `<div class="ovstars">${[1,2,3].map((i)=>`<img src="assets/ic_star.png" class="${i<=stars?'on':'off'}" onerror="this.style.display='none'">`).join('')}</div>`
+            : '';
+          $('ovS').innerHTML = starRow + (s.phase === 'won'
             ? (level.id >= 40 ? '通关全部 40 关！' : level.name + ' 通关') + `　<img class="ovic" style="width:18px;height:18px" src="assets/ic_gem.png" onerror="this.style.display='none'"> +${reward}　<img class="ovic" style="width:18px;height:18px" src="assets/chest_closed.png" onerror="this.style.display='none'"> +1`
-            : '基地被攻破，再试一次';
+            : '基地被攻破，再试一次');
           $('ovNext').style.display = (s.phase === 'won' && level.id < 40) ? '' : 'none';
         };
         playCut(s.phase === 'won' ? 'cut_win' : 'cut_lose', s.phase === 'won' ? '过关！' : '失败', showBox);
