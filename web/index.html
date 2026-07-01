@@ -149,6 +149,68 @@
   #settings .sreplay { background: linear-gradient(#7ad4f7,#2f8fd0); border: 3px solid #1e6aa8; box-shadow: 0 5px 0 #14507f; color: #0d3b5e; }
   #settings .shome { background: rgba(20,28,20,.72); border: 2px solid rgba(255,200,90,.5); color: #ffe9a8; }
 
+  /* ===== 首页（入口） ===== */
+  #home { position: absolute; inset: 0; z-index: 42; display: none; background: #1b3a24 center/cover no-repeat; }
+  #home::after { content:""; position:absolute; inset:0; background: linear-gradient(180deg,rgba(10,25,15,.32),rgba(8,20,12,.18) 40%,rgba(8,20,12,.42)); }
+  #homeBar { position: absolute; top: 12px; left: 14px; z-index: 2; display: flex; gap: 10px; }
+  #homeMain { position: absolute; inset: 56px 48px 26px; z-index: 2; display: flex; align-items: center; justify-content: space-between; }
+  .hleft { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
+  .hleft .hlogo { width: 360px; max-width: 42vw; filter: drop-shadow(0 5px 0 #7a3e12) drop-shadow(0 8px 12px rgba(0,0,0,.45)); }
+  .hleft .htag { padding: 5px 14px; border-radius: 999px; background: rgba(20,28,20,.55); border: 1px solid rgba(255,200,90,.4); font-size: 13px; color: #ffe9a8; font-weight: 700; }
+  .hleft .hmascot { width: 220px; max-width: 26vw; height: auto; margin-top: 4px; animation: wtfloat 4.2s ease-in-out infinite; filter: drop-shadow(0 8px 10px rgba(0,0,0,.4)); }
+  .hright { display: flex; flex-direction: column; gap: 14px; width: 300px; }
+  .hbtn { border-radius: 20px; text-align: center; cursor: pointer; color: #5a3410; font-weight: 900; }
+  .hbtn.hstart { padding: 16px; font-size: 28px; background: linear-gradient(#ffd868,#f2a531); border: 3px solid #b9742a; box-shadow: 0 6px 0 #9c5f1f,0 11px 18px rgba(0,0,0,.35); }
+  .hbtn.hcont { padding: 12px; font-size: 22px; color: #234d0f; background: linear-gradient(#a6e05a,#5fae2a); border: 3px solid #3d7a1c; box-shadow: 0 6px 0 #2f5f16,0 11px 18px rgba(0,0,0,.3); }
+  .hbtn.hcont .hsub { font-size: 12px; color: #2f5f16; font-weight: 800; margin-top: 2px; }
+  .hbtn.hlevels { padding: 12px; font-size: 22px; color: #0d3b5e; background: linear-gradient(#7ad4f7,#2f8fd0); border: 3px solid #1e6aa8; box-shadow: 0 6px 0 #14507f,0 11px 18px rgba(0,0,0,.3); }
+  .hrow3 { display: flex; gap: 10px; }
+  .hmini { flex: 1; padding: 10px 0; border-radius: 14px; text-align: center; font-size: 15px; font-weight: 800; color: #ffe9a8; background: rgba(20,28,20,.7); border: 2px solid rgba(255,200,90,.5); cursor: pointer; }
+
+  /* ===== 通用二级页（商店/图鉴） ===== */
+  .page { position: absolute; inset: 0; z-index: 43; display: none; background: radial-gradient(120% 100% at 50% 0%,#2f5233,#1c3320 58%,#112417); }
+  .pgbar { position: absolute; top: 0; left: 0; right: 0; height: 56px; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; z-index: 2; }
+  .pgback { width: 40px; height: 40px; border-radius: 14px; background: rgba(10,18,10,.6); border: 2px solid rgba(255,200,90,.5); color: #ffe9a8; font-size: 22px; display: grid; place-items: center; cursor: pointer; }
+  .pgtitle { position: absolute; left: 0; right: 0; text-align: center; color: #ffe066; font-size: 24px; font-weight: 900; -webkit-text-stroke: 1.5px #7a3e12; text-shadow: 0 2px 0 #7a3e12; pointer-events: none; }
+  .pgbody { position: absolute; inset: 62px 20px 18px; display: flex; gap: 16px; }
+
+  /* 商店 */
+  .shopPreview { width: 322px; flex: 0 0 auto; border-radius: 20px; background: rgba(8,16,10,.55); border: 2px solid rgba(255,200,90,.4); padding: 16px; display: flex; flex-direction: column; align-items: center; gap: 9px; }
+  .shopPreview .spname { font-size: 12px; color: #9fcf9a; font-weight: 700; letter-spacing: 1px; }
+  .shopPreview .sptitle { font-size: 24px; color: #ffe066; }
+  .shopPreview .spimg { width: 170px; height: 160px; object-fit: contain; filter: drop-shadow(0 0 26px rgba(176,140,255,.35)); }
+  .shopPreview .spdesc { font-size: 12px; color: #cfe0d0; font-weight: 600; text-align: center; line-height: 1.5; }
+  .shopPreview .spbuy { margin-top: auto; width: 100%; padding: 13px; border-radius: 16px; background: linear-gradient(#ffd868,#f0a521); border: 3px solid #b9742a; box-shadow: 0 5px 0 #9c5f1f; text-align: center; color: #5a3410; font-size: 20px; font-weight: 900; cursor: pointer; }
+  .shopGrid { flex: 1; display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; align-content: start; overflow-y: auto; }
+  .skin { border-radius: 16px; background: rgba(8,16,10,.45); border: 2px solid rgba(255,200,90,.28); padding: 11px 8px; display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; }
+  .skin.sel { border-color: #ffd23f; box-shadow: 0 0 0 3px rgba(255,210,63,.2); background: rgba(176,140,255,.14); }
+  .skin img { width: 62px; height: 62px; object-fit: contain; }
+  .skin .sknm { font-size: 12px; color: #e8f0e0; font-weight: 800; text-align: center; }
+  .skin .sktag { padding: 2px 10px; border-radius: 999px; font-size: 11px; font-weight: 800; }
+  .sktag.eq { background: #3fae2a; color: #fff; } .sktag.own { background: rgba(255,255,255,.14); color: #cfd6dd; } .sktag.buy { background: rgba(255,210,63,.2); border: 1px solid rgba(255,200,90,.7); color: #ffe9a8; }
+
+  /* 图鉴 */
+  .dexDetail { width: 322px; flex: 0 0 auto; border-radius: 20px; background: rgba(8,16,10,.55); border: 2px solid rgba(255,200,90,.4); padding: 16px; display: flex; flex-direction: column; align-items: center; gap: 8px; overflow-y: auto; }
+  .dexDetail .dxcat { align-self: flex-start; font-size: 12px; color: #9fcf9a; font-weight: 700; }
+  .dexDetail .dxname { font-size: 24px; color: #ffe066; }
+  .dexDetail .dxtags { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+  .dexDetail .dxtags span { padding: 2px 9px; border-radius: 999px; font-size: 11px; font-weight: 800; background: rgba(124,252,77,.16); border: 1px solid rgba(124,252,77,.5); color: #b8f5a0; }
+  .dexDetail .dxevo { display: flex; align-items: center; gap: 5px; }
+  .dexDetail .dxevo img { width: 54px; height: 54px; object-fit: contain; background: rgba(0,0,0,.2); border-radius: 12px; }
+  .dexDetail .dxevo span { color: #ffe9a8; font-size: 15px; }
+  .dexDetail .dxdesc { font-size: 12px; color: #b9cbb6; font-weight: 600; text-align: center; line-height: 1.55; }
+  .dexRight { flex: 1; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+  .dexTabs { display: flex; gap: 8px; }
+  .dxtab { padding: 8px 16px; border-radius: 13px; font-size: 13px; font-weight: 900; cursor: pointer; background: rgba(10,18,10,.55); border: 2px solid rgba(255,200,90,.35); color: #cfe0d0; }
+  .dxtab.on { background: linear-gradient(#ffd868,#f0a521); border-color: #b9742a; color: #5a3410; box-shadow: 0 3px 0 #9c5f1f; }
+  .dexGrid { flex: 1; display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; align-content: start; overflow-y: auto; }
+  .dexcell { display: flex; flex-direction: column; align-items: center; gap: 5px; cursor: pointer; }
+  .dexcell .dc { width: 62px; height: 62px; border-radius: 18px; background: rgba(10,18,10,.5); border: 2px solid rgba(255,255,255,.18); display: grid; place-items: center; overflow: hidden; }
+  .dexcell.sel .dc { border-color: #ffe066; box-shadow: 0 0 0 3px rgba(255,210,63,.2); }
+  .dexcell .dc img { width: 56px; height: 56px; object-fit: contain; }
+  .dexcell.lock .dc { color: #7a8690; font-size: 26px; font-weight: 900; }
+  .dexcell .dcn { font-size: 11px; color: #cfe0d0; font-weight: 700; }
+
   #overlay { position: absolute; inset: 0; background: rgba(0,0,0,.7); z-index: 30; display: none; align-items: center; justify-content: center; }
   #overlay .box { background: rgba(22,30,22,.98); border: 2px solid rgba(255,200,90,.55); border-radius: 18px; padding: 22px 32px; text-align: center; }
   #overlay .t { color: #ffe9a8; font-size: 24px; font-weight: 900; } #overlay .s { color: #c8b89f; font-size: 13px; margin: 8px 0 14px; }
@@ -186,7 +248,7 @@
   <div id="settings">
     <div class="scard">
       <div class="sclose" id="setClose">×</div>
-      <div class="stitle">⏸ 游戏暂停</div>
+      <div class="stitle" id="setTitle">⏸ 游戏暂停</div>
       <div class="ssub" id="setSub">第 1 关 · 翠绿草原</div>
       <div class="stog">
         <div class="srow"><div class="lbl">🎵 音乐</div><div class="sw on" id="swMusic"><div class="knob"></div></div></div>
@@ -194,11 +256,49 @@
       </div>
       <div class="sbtns">
         <div class="sbig" id="setResume">继续游戏 ▶</div>
-        <div class="srowbtn">
+        <div class="srowbtn" id="setRowBtn">
           <div class="sreplay" id="setReplay">↻ 重玩本关</div>
           <div class="shome" id="setHome">返回选关</div>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- 首页（入口） -->
+  <div id="home">
+    <div id="homeBar">
+      <div class="pill"><img class="hud-ic" src="assets/ic_coin.png" alt=""> <span id="homeGold">1280</span></div>
+    </div>
+    <div id="homeMain">
+      <div class="hleft">
+        <img class="hlogo" src="assets/logo_title.png" alt="森林塔防大作战" onerror="this.style.display='none'">
+        <div class="htag">40 关塔防 · 8 大主题世界</div>
+        <img class="hmascot" src="assets/tw_arrow_1.png" alt="" onerror="this.style.display='none'">
+      </div>
+      <div class="hright">
+        <div class="hbtn hstart" id="hStart">开始游戏</div>
+        <div class="hbtn hcont" id="hCont">继续冒险<div class="hsub" id="hContSub">上次进度 · 第 1 关</div></div>
+        <div class="hbtn hlevels" id="hLevels">关卡选择</div>
+        <div class="hrow3"><div class="hmini" id="hCodex">图鉴</div><div class="hmini" id="hShop">商店</div><div class="hmini" id="hSet">设置</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 商店（皮肤） -->
+  <div id="shop" class="page">
+    <div class="pgbar"><div class="pgback" id="shopBack">←</div><div class="pgtitle">商店 · 皮肤</div><div class="pill"><img class="hud-ic" src="assets/ic_coin.png" alt=""> <span>1280</span></div></div>
+    <div class="pgbody">
+      <div class="shopPreview" id="shopPreview"></div>
+      <div class="shopGrid" id="shopGrid"></div>
+    </div>
+  </div>
+
+  <!-- 图鉴 -->
+  <div id="codex" class="page">
+    <div class="pgbar"><div class="pgback" id="dexBack">←</div><div class="pgtitle">图鉴</div><div class="pill" id="dexCount">已收集 8 / 24</div></div>
+    <div class="pgbody">
+      <div class="dexDetail" id="dexDetail"></div>
+      <div class="dexRight"><div class="dexTabs" id="dexTabs"></div><div class="dexGrid" id="dexGrid"></div></div>
     </div>
   </div>
 

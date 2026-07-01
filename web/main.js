@@ -82,8 +82,7 @@
     return d;
   }
   function showMenu() {
-    state = null; grade = ''; $('menu').style.display = 'flex';
-    $('popup').style.display = 'none'; $('overlay').style.display = 'none'; $('settings').style.display = 'none';
+    state = null; grade = ''; hideScreens(); $('menu').style.display = 'flex';
     const p = prog(); chapter = Math.min(GROUPS.length - 1, Math.floor(Math.min(p.cleared, 39) / PER));   // 默认打开当前进度所在章
     renderChapters(); renderChapter();
   }
@@ -125,12 +124,81 @@
     const cta = $('mapCta'); cta.textContent = `进入 第 ${cur} 关 →`;
     cta.onclick = () => startLevel(cur);
   }
+
+  /* ---------- 首页（入口） ---------- */
+  const ATKDESC = { single: '单体物理', splash: '范围溅射', slow: '减速冰冻', poison: '持续中毒', chain: '闪电连锁', pierce: '穿透狙击', burn: '范围灼烧', arcane: '真伤奥术' };
+  function hideScreens() { for (const id of ['menu', 'home', 'shop', 'codex', 'settings', 'overlay', 'popup']) $(id).style.display = 'none'; }
+  function showHome() {
+    state = null; grade = ''; hideScreens();
+    $('home').style.display = 'block'; $('home').style.backgroundImage = 'url(assets/b_grass.png)';
+    const p = prog(); $('hContSub').textContent = '上次进度 · 第 ' + Math.min(40, p.cleared + 1) + ' 关';
+  }
+
+  /* ---------- 商店（守卫外观，展示为主） ---------- */
+  let shopSel = 0;
+  function showShop() { hideScreens(); $('shop').style.display = 'block'; renderShop(); }
+  function renderShop() {
+    const p = prog(), grid = $('shopGrid'); grid.innerHTML = '';
+    C.TOWER_KEYS.forEach((k, i) => {
+      const d = C.TOWERS[k], owned = d.unlock <= p.cleared + 1;
+      const el = document.createElement('div'); el.className = 'skin' + (i === shopSel ? ' sel' : '');
+      const tag = i === 0 ? '<div class="sktag eq">已装备</div>' : owned ? '<div class="sktag own">已拥有</div>' : `<div class="sktag buy">通关 ${d.unlock}</div>`;
+      el.innerHTML = `<img src="assets/tw_${k}_s3.png" onerror="this.src='assets/tw_${k}_1.png'"><div class="sknm">${d.name}</div>${tag}`;
+      el.onclick = () => { shopSel = i; renderShop(); };
+      grid.appendChild(el);
+    });
+    const k = C.TOWER_KEYS[shopSel], d = C.TOWERS[k];
+    $('shopPreview').innerHTML =
+      `<div class="spname">守卫 · 外观</div><div class="sptitle">${d.name}</div>` +
+      `<img class="spimg" src="assets/tw_${k}_s3.png" onerror="this.src='assets/tw_${k}_1.png'">` +
+      `<div class="spdesc">${ATKDESC[d.attack] || ''} · 造价 ${d.cost}<br>满级专精：${d.branches.A.name} / ${d.branches.B.name}</div>` +
+      `<div class="spbuy">${shopSel === 0 ? '已装备' : '敬请期待'}</div>`;
+  }
+
+  /* ---------- 图鉴（守卫/怪物/Boss） ---------- */
+  let dexTab = 'guard', dexSel = 0;
+  function showCodex() { hideScreens(); $('codex').style.display = 'block'; dexTab = 'guard'; dexSel = 0; renderCodex(); }
+  function dexList() {
+    const p = prog();
+    if (dexTab === 'guard') return C.TOWER_KEYS.map((k) => ({ k, name: C.TOWERS[k].name, img: `tw_${k}_1`, un: C.TOWERS[k].unlock <= p.cleared + 1 }));
+    const boss = dexTab === 'boss';
+    return Object.keys(C.ENEMIES).filter((k) => !!C.ENEMIES[k].boss === boss)
+      .map((k) => ({ k, name: C.ENEMIES[k].name, img: C.ENEMIES[k].img, un: (C.ENEMIES[k].unlock || 1) <= p.cleared + 1 }));
+  }
+  function renderCodex() {
+    const tabs = [['guard', '守卫'], ['mob', '怪物'], ['boss', 'Boss']], tb = $('dexTabs'); tb.innerHTML = '';
+    tabs.forEach(([id, lbl]) => { const el = document.createElement('div'); el.className = 'dxtab' + (dexTab === id ? ' on' : ''); el.textContent = lbl; el.onclick = () => { dexTab = id; dexSel = 0; renderCodex(); }; tb.appendChild(el); });
+    const list = dexList(), unlocked = list.filter((x) => x.un).length;
+    $('dexCount').textContent = `已收集 ${unlocked} / ${list.length}`;
+    const grid = $('dexGrid'); grid.innerHTML = '';
+    list.forEach((it, i) => {
+      const el = document.createElement('div'); el.className = 'dexcell' + (i === dexSel ? ' sel' : '') + (it.un ? '' : ' lock');
+      el.innerHTML = it.un ? `<div class="dc"><img src="assets/${it.img}.png" onerror="this.style.display='none'"></div><div class="dcn">${it.name}</div>` : `<div class="dc">?</div><div class="dcn">未解锁</div>`;
+      if (it.un) el.onclick = () => { dexSel = i; renderCodex(); };
+      grid.appendChild(el);
+    });
+    const it = list[dexSel] || list[0], det = $('dexDetail');
+    if (!it || !it.un) { det.innerHTML = '<div class="dxdesc" style="margin:auto">未解锁 · 通关更多关卡以收集</div>'; return; }
+    if (dexTab === 'guard') {
+      const d = C.TOWERS[it.k];
+      det.innerHTML = `<div class="dxcat">防御塔</div><div class="dxname">${d.name}</div>` +
+        `<div class="dxtags"><span>${ATKDESC[d.attack] || ''}</span><span>第${d.unlock}关解锁</span><span>造价${d.cost}</span></div>` +
+        `<div class="dxevo"><img src="assets/tw_${it.k}_1.png"><span>→</span><img src="assets/tw_${it.k}_2.png"><span>→</span><img src="assets/tw_${it.k}_s3.png"></div>` +
+        `<div class="dxdesc">满级二选一专精：「${d.branches.A.name}」${d.branches.A.desc} / 「${d.branches.B.name}」${d.branches.B.desc}</div>`;
+    } else {
+      const e = C.ENEMIES[it.k];
+      det.innerHTML = `<div class="dxcat">${dexTab === 'boss' ? 'Boss' : '怪物'}</div><div class="dxname">${e.name}</div>` +
+        `<div class="dxtags"><span>血量 ${e.hp}</span><span>速度 ${e.speed}</span>${e.armor ? `<span>护甲 ${e.armor}</span>` : ''}${e.fly ? '<span>飞行</span>' : ''}</div>` +
+        `<div class="dxevo"><img src="assets/${e.img}.png" style="width:96px;height:96px"></div>` +
+        `<div class="dxdesc">${dexTab === 'boss' ? '强大的关底首领，血量随关卡提升。' : '沿路径进攻基地的敌人，击杀获得金币。'}</div>`;
+    }
+  }
   function startLevel(n) {
     level = LV.buildLevel(n); state = E.createState(level); anim = 0; speed = 1; $('speedNum').textContent = '1';
     grade = THEME_GRADE[level.theme] || ''; setPaused(false);
     baseHitAt = -99; lastLives = null;
     popupSlot = -1; for (const k in hud) delete hud[k];
-    $('menu').style.display = 'none'; $('overlay').style.display = 'none'; $('popup').style.display = 'none';
+    hideScreens();   // 隐藏首页/选关/商店/图鉴/设置等一切界面
     // 解锁说明 (#9)：本关新解锁、且没看过的塔
     const p = prog(); unlockQ = level.towers.filter((k) => C.TOWERS[k].unlock === n && !p.seen.includes(k));
     // 开场过场视频（缺失则立即跳过），播完再弹解锁说明
@@ -478,6 +546,11 @@
   function setPaused(p) { paused = p; $('playIco').style.display = p ? 'block' : 'none'; $('pauseIco').style.display = p ? 'none' : 'flex'; }
   $('startBtn').onclick = () => { if (state) setPaused(!paused); };
   $('menuBtn').onclick = openSettings;   // 游戏内 ☰ → 暂停/设置面板（面板内可返回选关）
+  // 首页导航
+  const goCur = () => { const p = prog(); startLevel(Math.min(40, p.cleared + 1)); };
+  $('hStart').onclick = goCur; $('hCont').onclick = goCur;
+  $('hLevels').onclick = showMenu; $('hCodex').onclick = showCodex; $('hShop').onclick = showShop; $('hSet').onclick = openSettings;
+  $('shopBack').onclick = showHome; $('dexBack').onclick = showHome; $('mapBack').onclick = showHome;
   $('speedBtn').onclick = () => { speed = speed === 1 ? 2 : speed === 2 ? 3 : 1; $('speedNum').textContent = speed; };
   $('ovReplay').onclick = () => startLevel(level.id); $('ovNext').onclick = () => startLevel(Math.min(40, level.id + 1)); $('ovMenu').onclick = showMenu;
 
@@ -504,9 +577,13 @@
   let settingsBusy = false;
   function paintToggles() { $('swMusic').className = 'sw' + (audio.music ? ' on' : ''); $('swSfx').className = 'sw' + (audio.sfx ? ' on' : ''); }
   function openSettings() {
-    if (!state) return;
-    settingsBusy = true; paintToggles();
-    $('setSub').textContent = level.name;
+    const inGame = !!state;                    // 首页也可打开(仅音乐/音效)
+    settingsBusy = inGame;                     // 首页打开不需暂停战斗
+    paintToggles();
+    $('setTitle').textContent = inGame ? '⏸ 游戏暂停' : '设置';
+    $('setSub').textContent = inGame ? level.name : '音乐 / 音效';
+    $('setResume').textContent = inGame ? '继续游戏 ▶' : '关闭';
+    $('setRowBtn').style.display = inGame ? 'flex' : 'none';
     $('settings').style.display = 'flex';
   }
   function closeSettings() { settingsBusy = false; $('settings').style.display = 'none'; }
@@ -538,8 +615,11 @@
 
   const q = new URLSearchParams(location.search), pn = parseInt(q.get('play') || '0', 10);
   if (pn >= 1) { $('loading').style.display = 'none'; startLevel(pn); }
+  else if (q.has('shopdbg')) { $('loading').style.display = 'none'; showShop(); }
+  else if (q.has('dexdbg')) { $('loading').style.display = 'none'; showCodex(); }
+  else if (q.has('homedbg')) { $('loading').style.display = 'none'; showHome(); }
   else if (q.has('demo') || q.has('menudbg') || q.has('solo') || q.has('vfxtest') || q.has('setdbg')) { $('loading').style.display = 'none'; showMenu(); }
-  else runLoading(showMenu);   // 正常进入：先播加载页，再进选关
+  else runLoading(showHome);   // 正常进入：先播加载页，再进首页
   if (q.has('setdbg')) setTimeout(() => {   // 截图调试：进第1关并打开设置面板
     startLevel(1);
     setTimeout(() => { $('banner').style.display = 'none'; cutBusy = false; unlockQ = []; $('unlock').style.display = 'none'; openSettings(); }, 400);
