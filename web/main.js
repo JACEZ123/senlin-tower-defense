@@ -63,7 +63,7 @@
   const clear = (n) => { const p = prog(); if (n > p.cleared) { p.cleared = n; save(p); } };
 
   let state = null, level = null, anim = 0, speed = 1, popupSlot = -1, unlockQ = [];
-  let baseHitAt = -99, lastLives = null, cutBusy = false;   // 基地受击时刻 / 上帧生命 / 过场视频播放中
+  let baseHitAt = -99, lastLives = null, cutBusy = false, paused = false;   // 基地受击时刻 / 上帧生命 / 过场播放中 / 手动暂停
   const $ = (id) => document.getElementById(id);
 
   /* ---------- 选关（蜿蜒地图，每章=1主题=5关） ---------- */
@@ -127,7 +127,7 @@
   }
   function startLevel(n) {
     level = LV.buildLevel(n); state = E.createState(level); anim = 0; speed = 1; $('speedNum').textContent = '1';
-    grade = THEME_GRADE[level.theme] || '';
+    grade = THEME_GRADE[level.theme] || ''; setPaused(false);
     baseHitAt = -99; lastLives = null;
     popupSlot = -1; for (const k in hud) delete hud[k];
     $('menu').style.display = 'none'; $('overlay').style.display = 'none'; $('popup').style.display = 'none';
@@ -317,9 +317,10 @@
       ctx.beginPath(); ctx.ellipse(px, py + vk(2), vk(24), vk(12), 0, 0, 7); ctx.fillStyle = grd; ctx.fill();
       ctx.lineWidth = vk(2); ctx.strokeStyle = 'rgba(60,42,22,.7)'; ctx.stroke();
       ctx.beginPath(); ctx.ellipse(px, py - vk(1), vk(19), vk(9), 0, 0, 7); ctx.fillStyle = 'rgba(255,235,190,.35)'; ctx.fill();
-      // 攻击动画：开火后短时间内播放攻击精灵表（按开火进度取帧），否则画待机/静态形象
-      const atk = ATK[t.key], tsf = st.rate - t.cd, ATKDUR = 0.42;
-      if (atk && tsf >= 0 && tsf < ATKDUR) {
+      // 攻击动画：仅 3级/分支塔播放攻击精灵表(该表按3级形象生成)；1/2级塔用各自静态形象+回弹，
+      // 避免低级塔开火时错误显示成高级形象（#3 修复）
+      const atk = ATK[t.key], tsf = st.rate - t.cd, ATKDUR = 0.42, isMax = t.branch || t.level >= 2;
+      if (atk && isMax && tsf >= 0 && tsf < ATKDUR) {
         drawSprite(atk.asset, t.x, t.y + 4, 80, 0.78, { frame: Math.floor((tsf / ATKDUR) * atk.frames) });
       } else {
         drawSprite(towerImg(t), t.x, t.y + 4 + bob, 78 * punch, 0.78);
@@ -473,26 +474,27 @@
   }
   cv.addEventListener('click', (e) => onTap(e.clientX, e.clientY));
   cv.addEventListener('touchstart', (e) => { const t = e.touches[0]; onTap(t.clientX, t.clientY); e.preventDefault(); }, { passive: false });
-  $('startBtn').onclick = () => state && E.applyCommand(state, { type: 'startWave' });
+  // #4 播放键 = 暂停/继续游戏（波次由倒计时自动开始，不再手动出怪）
+  function setPaused(p) { paused = p; $('playIco').style.display = p ? 'block' : 'none'; $('pauseIco').style.display = p ? 'none' : 'flex'; }
+  $('startBtn').onclick = () => { if (state) setPaused(!paused); };
   $('menuBtn').onclick = openSettings;   // 游戏内 ☰ → 暂停/设置面板（面板内可返回选关）
   $('speedBtn').onclick = () => { speed = speed === 1 ? 2 : speed === 2 ? 3 : 1; $('speedNum').textContent = speed; };
   $('ovReplay').onclick = () => startLevel(level.id); $('ovNext').onclick = () => startLevel(Math.min(40, level.id + 1)); $('ovMenu').onclick = showMenu;
 
-  /* ---------- 过场视频（开场/胜利/失败/Boss来袭） ----------
-   * assets/vid/<name>.mp4；缺失/出错则立即跳过，不阻塞流程。播放期间暂停战斗模拟。 */
+  /* ---------- 轻量过渡横幅（开场/过关/失败/Boss来袭） ----------
+   * 不再全屏播视频；改为居中横幅 + 小 gif，~1.8s 自动消失。
+   * 开场/过关/失败会短暂暂停(cutBusy)；Boss来袭是战斗中的警告，不暂停。 */
   function playCut(name, tag, onDone) {
-    const box = $('cut'), v = $('cutVid');
+    const box = $('banner'), gif = $('bnGif');
+    const kind = /boss/.test(name) ? 'boss' : /win/.test(name) ? 'win' : /lose/.test(name) ? 'lose' : 'start';
     let ended = false, cap = 0;
-    const finish = () => {
-      if (ended) return; ended = true; clearTimeout(cap);
-      cutBusy = false; box.style.display = 'none';
-      try { v.pause(); v.removeAttribute('src'); v.load(); } catch (e) {}
-      if (onDone) onDone();
-    };
-    v.onerror = finish; v.onended = finish; $('cutSkip').onclick = finish;
-    cutBusy = true; $('cutTag').textContent = tag || ''; box.style.display = 'flex';
-    try { v.src = `assets/vid/${name}.mp4`; v.currentTime = 0; const pr = v.play(); if (pr && pr.catch) pr.catch(finish); } catch (e) { return finish(); }
-    cap = setTimeout(finish, 9000);   // 兜底：卡住/过长自动收尾
+    const finish = () => { if (ended) return; ended = true; clearTimeout(cap); cutBusy = false; box.style.display = 'none'; if (onDone) onDone(); };
+    box.className = kind;
+    $('bnText').textContent = tag || '';
+    gif.style.display = ''; gif.src = `assets/gif/${name}.gif`;
+    cutBusy = (kind !== 'boss');           // Boss 警告不冻结战斗
+    box.style.display = 'flex';
+    cap = setTimeout(finish, kind === 'boss' ? 1600 : 1900);
   }
 
   /* ---------- 设置 / 暂停面板 ---------- */
@@ -531,7 +533,7 @@
 
   /* ---------- 主循环 ---------- */
   let last = 0;
-  function frame(t) { if (!last) last = t; let dt = (t - last) / 1000; last = t; if (dt > .05) dt = .05; dt *= speed; anim += dt; if (state && $('unlock').style.display !== 'flex' && !cutBusy && !settingsBusy) { E.update(state, dt); render(); syncHud(); } requestAnimationFrame(frame); }
+  function frame(t) { if (!last) last = t; let dt = (t - last) / 1000; last = t; if (dt > .05) dt = .05; dt *= speed; anim += dt; if (state && $('unlock').style.display !== 'flex' && !cutBusy && !settingsBusy) { if (!paused) E.update(state, dt); render(); syncHud(); } requestAnimationFrame(frame); }
   requestAnimationFrame(frame);
 
   const q = new URLSearchParams(location.search), pn = parseInt(q.get('play') || '0', 10);
@@ -540,7 +542,7 @@
   else runLoading(showMenu);   // 正常进入：先播加载页，再进选关
   if (q.has('setdbg')) setTimeout(() => {   // 截图调试：进第1关并打开设置面板
     startLevel(1);
-    setTimeout(() => { $('cut').style.display = 'none'; cutBusy = false; unlockQ = []; $('unlock').style.display = 'none'; openSettings(); }, 400);
+    setTimeout(() => { $('banner').style.display = 'none'; cutBusy = false; unlockQ = []; $('unlock').style.display = 'none'; openSettings(); }, 400);
   }, 200);
   if (q.has('menudbg')) setTimeout(() => {   // 截图调试：展示就地环形菜单
     if (!state) return;

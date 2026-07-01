@@ -21,6 +21,8 @@
   .hud-ic { width: 20px; height: 20px; object-fit: contain; vertical-align: middle; }
   .btn-ic img { width: 22px; height: 22px; object-fit: contain; }
   #speedBtn { gap: 0; } #speedBtn img { width: 16px; height: 16px; } #speedNum { font-size: 13px; font-weight: 800; margin-left: 1px; }
+  .pause2 { display: flex; gap: 4px; align-items: center; justify-content: center; }
+  .pause2::before, .pause2::after { content: ""; width: 5px; height: 16px; border-radius: 2px; background: #ffe9a8; }
 
   /* 弹窗（建造/升级/分支） */
   #popup { position: absolute; z-index: 20; background: rgba(22,30,22,.97); border: 2px solid rgba(255,200,90,.55); border-radius: 16px; padding: 12px; box-shadow: 0 8px 30px rgba(0,0,0,.6); display: none; min-width: 260px; }
@@ -62,11 +64,20 @@
   .lvl .st { position: absolute; top: 3px; right: 5px; font-size: 12px; }
   .lvl .st .stimg { width: 15px; height: 15px; object-fit: contain; display: block; }
 
-  /* 过场视频叠层（开场/胜利/失败/Boss来袭） */
-  #cut { position: absolute; inset: 0; z-index: 50; display: none; align-items: center; justify-content: center; background: #000; }
-  #cutVid { width: 100%; height: 100%; object-fit: cover; }
-  #cutSkip { position: absolute; right: 16px; bottom: 14px; z-index: 51; padding: 7px 16px; border-radius: 999px; background: rgba(0,0,0,.55); border: 2px solid rgba(255,255,255,.4); color: #fff; font-size: 13px; font-weight: 800; cursor: pointer; }
-  #cutTag { position: absolute; left: 0; right: 0; top: 12%; z-index: 51; text-align: center; color: #fff; font-size: 34px; font-weight: 900; letter-spacing: 4px; text-shadow: 0 3px 8px rgba(0,0,0,.8); pointer-events: none; }
+  /* 轻量过渡横幅/toast（开场/过关/失败/Boss来袭），非全屏、自动消失 */
+  @keyframes bnIn { 0%{opacity:0;transform:translateY(-24px) scale(.9)} 100%{opacity:1;transform:translateY(0) scale(1)} }
+  @keyframes bnShake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-6px)} 40%{transform:translateX(6px)} 60%{transform:translateX(-4px)} 80%{transform:translateX(4px)} }
+  #banner { position: absolute; left: 0; right: 0; top: 20%; z-index: 50; display: none; justify-content: center; pointer-events: none; }
+  #banner .bncard { display: flex; align-items: center; gap: 14px; padding: 12px 26px 12px 14px; border-radius: 18px;
+                    background: linear-gradient(180deg,rgba(30,42,28,.96),rgba(18,26,18,.96)); border: 3px solid rgba(255,200,90,.7);
+                    box-shadow: 0 12px 40px rgba(0,0,0,.55); animation: bnIn .35s ease-out; max-width: 90vw; }
+  #banner #bnGif { width: 150px; height: 88px; object-fit: cover; border-radius: 12px; flex: 0 0 auto; }
+  #banner #bnText { color: #ffe066; font-size: 30px; font-weight: 900; letter-spacing: 3px; -webkit-text-stroke: 1.5px #7a3e12; text-shadow: 0 3px 0 #7a3e12; white-space: nowrap; }
+  #banner.boss .bncard { border-color: #ff5a4d; background: linear-gradient(180deg,rgba(60,20,18,.96),rgba(30,10,10,.96)); animation: bnIn .35s ease-out, bnShake .5s ease-in-out .35s 2; }
+  #banner.boss #bnText { color: #ff6a5a; -webkit-text-stroke: 1.5px #5a1410; text-shadow: 0 3px 0 #5a1410; }
+  #banner.win .bncard { border-color: #ffd23f; }
+  #banner.lose .bncard { border-color: #9aa6b0; background: linear-gradient(180deg,rgba(40,44,48,.96),rgba(22,26,30,.96)); }
+  #banner.lose #bnText { color: #d5dde5; -webkit-text-stroke: 1.5px #2a3038; text-shadow: 0 3px 0 #2a3038; }
 
   /* ===== 设计稿动画 ===== */
   @keyframes wtbob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-9px)} }
@@ -151,11 +162,11 @@
     <div class="pill"><img class="hud-ic" src="assets/ic_coin.png" alt=""> <span id="gold">0</span></div>
     <div id="waveWrap"><div id="waveFill"></div><div id="waveTxt">0/0 波</div></div>
     <div class="btn-ic" id="speedBtn"><img src="assets/ic_speed.png" alt=""><span id="speedNum">1</span></div>
-    <div class="btn-ic" id="startBtn"><img src="assets/ic_play.png" alt="出怪"></div>
+    <div class="btn-ic" id="startBtn"><img id="playIco" src="assets/ic_play.png" alt="继续" style="display:none"><span id="pauseIco" class="pause2"></span></div>
     <div class="btn-ic" id="menuBtn"><img src="assets/ic_menu.png" alt="菜单"></div>
   </div>
   <div id="popup"></div>
-  <div id="cut"><video id="cutVid" playsinline muted preload="auto"></video><div id="cutTag"></div><div id="cutSkip">跳过</div></div>
+  <div id="banner"><div class="bncard"><img id="bnGif" alt="" onerror="this.style.display='none'"><div id="bnText"></div></div></div>
   <div id="unlock"><div class="ucard"><div class="uglow"><img id="uImg"></div><div class="un" id="uName"></div><div class="ud" id="uDesc"></div><div class="btn up" id="uOk" style="display:inline-block">知道了</div></div></div>
   <div id="overlay"><div class="box"><div class="t" id="ovT"></div><div class="s" id="ovS"></div><div class="row"><div class="btn up" id="ovNext">下一关</div><div class="btn sell" id="ovReplay">重玩</div><div class="btn" style="background:#557" id="ovMenu">选关</div></div></div></div>
   <div id="menu" class="mapmode">
