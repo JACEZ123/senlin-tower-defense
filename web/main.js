@@ -29,11 +29,25 @@
   const BASES = []; for (const t of THEMES) for (let s = 0; s < 3; s++) BASES.push(`base_${t}_${s}`);   // 每主题基地×3态(完好/残破/倒塌)
   const UIIMG = ['ic_play', 'ic_win', 'ic_lose', 'ic_star', 'ic_lock', 'logo_title'];        // 替代 emoji 的图标（Boss来袭用视频，无需 ic_boss）
   const FXIMG = ['fx_burst', 'fx_puff', 'fx_ring', 'fx_magic', 'fx_ice', 'fx_poison', 'fx_zap', 'fx_muzzle', 'fx_poof'];   // 图片化命中/攻击特效精灵
+  const NUMIMG = ['num_0', 'num_1', 'num_2', 'num_3', 'num_4', 'num_5', 'num_6', 'num_7', 'num_8', 'num_9', 'num_slash', 'num_plus', 'num_x', 'num_dot', 'num_pct', 'num_dash'];  // 图片数字字体
   const CHESTIMG = ['chest_closed', 'ic_hand', 'sign_wood', 'frame_common', 'frame_rare', 'frame_epic', ...C.CHEST_ITEMS.map((it) => it.img)];  // 宝箱/引导美术
   const ENIMG = [...new Set(Object.values(C.ENEMIES).map((e) => e.img))];   // 每种怪的专属立绘 en_<key>
   const towerImg = (t) => `tw_${t.key}_${t.branch ? 3 : t.level + 1}`;   // 按等级取形象
   const IMG = {};
-  await Promise.all([...TW, ...ATKIMG, ...ICONS, ...OBS, 'hero_ranger', ...ENIMG, ...BG, ...PORTALS, ...BASES, ...UIIMG, ...FXIMG, ...CHESTIMG].map((k) => new Promise((r) => { const im = new Image(); im.onload = () => { IMG[k] = im; r(); }; im.onerror = () => r(); im.src = `assets/${k}.png`; })));
+  await Promise.all([...TW, ...ATKIMG, ...ICONS, ...OBS, 'hero_ranger', ...ENIMG, ...BG, ...PORTALS, ...BASES, ...UIIMG, ...FXIMG, ...NUMIMG, ...CHESTIMG].map((k) => new Promise((r) => { const im = new Image(); im.onload = () => { IMG[k] = im; r(); }; im.onerror = () => r(); im.src = `assets/${k}.png`; })));
+  // ---- 图片数字字体：把字符串渲染成字形图片 ----
+  const CH2NUM = { '0': 'num_0', '1': 'num_1', '2': 'num_2', '3': 'num_3', '4': 'num_4', '5': 'num_5', '6': 'num_6', '7': 'num_7', '8': 'num_8', '9': 'num_9', '/': 'num_slash', '+': 'num_plus', '×': 'num_x', 'x': 'num_x', '·': 'num_dot', '%': 'num_pct', '-': 'num_dash', '−': 'num_dash' };
+  function numHTML(str, h) {   // HTML: 一串字形 <img>
+    return String(str).split('').map((c) => { const k = CH2NUM[c]; return k ? `<img class="ni" style="height:${h}px" src="assets/${k}.png">` : (c === ' ' ? `<span style="display:inline-block;width:${h * 0.3}px"></span>` : `<span>${c}</span>`); }).join('');
+  }
+  function setNum(id, val, h) { const el = $(id); if (el) el.innerHTML = numHTML(val, h || 20); }
+  function drawNum(str, cx, cy, h, align) {   // 画布: 居中/左对齐画一串字形图
+    const s = String(str); let tw = 0; const ws = [];
+    for (const c of s) { const im = IMG[CH2NUM[c]]; if (im) { const w = h * im.width / im.height; ws.push({ im, w }); tw += w; } else { ws.push({ im: null, w: h * 0.3 }); tw += h * 0.3; } }
+    let x = align === 'left' ? cx : cx - tw / 2;
+    for (const g of ws) { if (g.im) ctx.drawImage(g.im, x, cy - h / 2, g.w, h); x += g.w; }
+    return tw;
+  }
   // 动画清单(由生成流水线产出): {tag:{asset,frames}}. tag=idle_<key>/atk_<key>. 决定哪些精灵表按帧动画。
   const ATK = {};   // key -> {asset, frames} 攻击动画
   try {
@@ -92,7 +106,7 @@
   function updateChestBtn() {
     const inGame = !!state, n = chestStock();
     $('chestBtn').style.display = inGame ? 'flex' : 'none';
-    $('chestNum').textContent = n;
+    setNum('chestNum', n, 15);
     $('chestBtn').style.outline = chestMode ? '3px solid #ffd23f' : 'none';
   }
   function toggleChestMode() {
@@ -171,7 +185,7 @@
   function renderChapter() {
     const p = prog(), th = GROUPS[chapter];
     $('mapTitle').textContent = `第${'一二三四五六七八'[chapter]}章 · ${THEME[th]}`;
-    $('mapCleared').textContent = p.cleared;
+    setNum('mapCleared', p.cleared, 18);
     $('mapArea').style.backgroundImage = `url(assets/b_${th}.png)`;
     $('mapPath').setAttribute('d', smoothPath(NODEPTS));
     const box = $('mapNodes'); box.innerHTML = '';
@@ -203,7 +217,7 @@
     state = null; grade = ''; hideScreens();
     $('home').style.display = 'block'; $('home').style.backgroundImage = 'url(assets/bg_home.png)';
     const p = prog(); $('hContSub').textContent = '上次进度 · 第 ' + Math.min(40, p.cleared + 1) + ' 关';
-    $('homeGems').textContent = gems();
+    setNum('homeGems', gems(), 22);
   }
 
   /* ---------- 商店（角色特色皮肤：钻石购买 + 装备） ---------- */
@@ -213,7 +227,7 @@
   function skinsOf(k) { return [{ id: 'default', name: '默认', gem: 0 }].concat(SKINMAN[k] || []); }
   function skinImg(k, id) { return id === 'default' ? `assets/tw_${k}_s3.png` : `assets/skins/tw_${k}_${id}.png`; }
   function renderShop() {
-    $('shopGems').textContent = gems();
+    setNum('shopGems', gems(), 20);
     const sd = skinData();
     // 角色选择行
     const cbar = $('shopChars'); cbar.innerHTML = '';
@@ -323,7 +337,7 @@
       `<div class="sv">${val}</div></div>`).join('') + '</div>';
   }
   function startLevel(n) {
-    level = LV.buildLevel(n); state = E.createState(level); anim = 0; speed = 1; $('speedNum').textContent = '1';
+    level = LV.buildLevel(n); state = E.createState(level); anim = 0; speed = 1; setNum('speedNum', 1, 14);
     grade = THEME_GRADE[level.theme] || ''; setPaused(false); chestMode = false;
     baseHitAt = -99; lastLives = null;
     popupSlot = -1; for (const k in hud) delete hud[k];
@@ -416,11 +430,9 @@
     // 受击冲击环
     if (hit > 0) { ctx.save(); ctx.globalAlpha = hit; ctx.strokeStyle = '#ff5a4d'; ctx.lineWidth = vk(4) * hit; ctx.beginPath(); ctx.arc(vx(p.x), vy(p.y) - vk(10), vk(32) * (1.4 - hit), 0, 7); ctx.stroke(); ctx.restore(); }
     // 生命：心形图标 + 数字
-    const hi = IMG.ic_heart, hy = vy(p.y) - vk(56), hs = vk(20);
-    if (hi) ctx.drawImage(hi, vx(p.x) - vk(20), hy - hs / 2, hs, hs);
-    ctx.font = `bold ${vk(17)}px sans-serif`; ctx.fillStyle = '#fff'; ctx.strokeStyle = 'rgba(0,0,0,.6)'; ctx.lineWidth = vk(3); ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-    ctx.strokeText(state.lives, vx(p.x) + vk(4), hy); ctx.fillText(state.lives, vx(p.x) + vk(4), hy);
-    ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+    const hi = IMG.ic_heart, hy = vy(p.y) - vk(56), hs = vk(22);
+    if (hi) ctx.drawImage(hi, vx(p.x) - vk(24), hy - hs / 2, hs, hs);
+    drawNum(state.lives, vx(p.x) + vk(2), hy, vk(22), 'left');   // 图片数字
   }
   function jagged(ax, ay, bx, by, amp) {     // 在两点间画锯齿闪电
     const dx = bx - ax, dy = by - ay, len = Math.hypot(dx, dy) || 1, nx = -dy / len, ny = dx / len, segs = Math.max(3, Math.round(len / vk(22)));
@@ -644,7 +656,7 @@
     for (const e of s.effects) drawEffect(e);
     if (s.hero) { ctx.beginPath(); ctx.ellipse(vx(s.hero.x), vy(s.hero.y), vk(24), vk(10), 0, 0, 7); ctx.fillStyle = 'rgba(182,255,90,.22)'; ctx.fill(); drawSprite('hero_ranger', s.hero.x, s.hero.y, 92, 0.86); }
     drawBase();
-    for (const f of s.floats) { ctx.globalAlpha = Math.max(0, 1 - f.t); ctx.fillStyle = f.color; ctx.font = `bold ${vk(18)}px sans-serif`; ctx.textAlign = 'center'; ctx.fillText(f.text, vx(f.x), vy(f.y) - vk(26) - f.t * vk(20)); ctx.globalAlpha = 1; }
+    for (const f of s.floats) { ctx.globalAlpha = Math.max(0, 1 - f.t); drawNum(f.text, vx(f.x), vy(f.y) - vk(26) - f.t * vk(20), vk(20), 'center'); ctx.globalAlpha = 1; }
     ctx.restore();
     drawMenu();
   }
@@ -653,7 +665,7 @@
   const hud = {};
   function syncHud() {
     const s = state, g = Math.floor(s.gold);
-    if (hud.g !== g) { hud.g = g; $('gold').textContent = g; }
+    if (hud.g !== g) { hud.g = g; setNum('gold', g, 22); }
     // 基地受击：生命下降 → 记录闪光时刻
     if (lastLives != null && s.lives < lastLives) baseHitAt = anim;
     lastLives = s.lives;
@@ -840,7 +852,7 @@
   $('hStart').onclick = goCur; $('hCont').onclick = goCur;
   $('hLevels').onclick = showMenu; $('hCodex').onclick = showCodex; $('hShop').onclick = showShop; $('hSet').onclick = openSettings;
   $('shopBack').onclick = showHome; $('dexBack').onclick = showHome; $('mapBack').onclick = showHome;
-  $('speedBtn').onclick = () => { speed = speed === 1 ? 2 : speed === 2 ? 3 : 1; $('speedNum').textContent = speed; };
+  $('speedBtn').onclick = () => { speed = speed === 1 ? 2 : speed === 2 ? 3 : 1; setNum('speedNum', speed, 14); };
   $('ovReplay').onclick = () => startLevel(level.id); $('ovNext').onclick = () => startLevel(Math.min(40, level.id + 1)); $('ovMenu').onclick = showMenu;
 
   /* ---------- 轻量过渡横幅（开场/过关/失败/Boss来袭） ----------
