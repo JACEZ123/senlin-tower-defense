@@ -131,23 +131,23 @@
 
   /* ===== 设置 / 暂停面板 ===== */
   #settings { position: absolute; inset: 0; z-index: 45; display: none; align-items: center; justify-content: center; background: rgba(6,14,9,.62); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
-  #settings .scard { width: 440px; max-width: 90vw; border-radius: 26px; background: linear-gradient(#2e3d26,#1b271a); border: 3px solid rgba(255,200,90,.6); box-shadow: 0 24px 60px rgba(0,0,0,.6); padding: 24px 28px 26px; position: relative; }
+  #settings .scard { width: 480px; max-width: 92vw; background: url(assets/ui_dialog.png) center/100% 100% no-repeat; padding: 54px 60px 58px; position: relative; filter: drop-shadow(0 20px 40px rgba(0,0,0,.55)); }
   #settings .sclose { position: absolute; right: 14px; top: 14px; width: 30px; height: 30px; border-radius: 50%; background: rgba(0,0,0,.35); border: 1.5px solid rgba(255,255,255,.25); color: #fff; font-size: 16px; display: grid; place-items: center; cursor: pointer; }
-  #settings .stitle { text-align: center; color: #ffe066; font-size: 28px; font-weight: 900; -webkit-text-stroke: 1.5px #7a3e12; text-shadow: 0 3px 0 #7a3e12; }
-  #settings .ssub { text-align: center; color: #9fcf9a; font-size: 13px; font-weight: 700; margin-top: 2px; }
-  #settings .stog { margin-top: 18px; display: flex; flex-direction: column; gap: 10px; }
-  #settings .srow { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-radius: 14px; background: rgba(10,18,10,.5); border: 2px solid rgba(255,200,90,.3); }
-  #settings .srow .lbl { display: flex; align-items: center; gap: 10px; color: #e8f0e0; font-size: 16px; font-weight: 800; }
+  #settings .stitle { text-align: center; color: #6b3d12; font-size: 26px; font-weight: 900; text-shadow: 0 1px 0 rgba(255,245,215,.5); }
+  #settings .ssub { text-align: center; color: #8a6a3a; font-size: 13px; font-weight: 700; margin-top: 2px; }
+  #settings .stog { margin-top: 16px; display: flex; flex-direction: column; gap: 10px; }
+  #settings .srow { display: flex; align-items: center; justify-content: space-between; padding: 11px 16px; border-radius: 14px; background: rgba(120,80,35,.16); border: 2px solid rgba(120,80,35,.3); }
+  #settings .srow .lbl { display: flex; align-items: center; gap: 10px; color: #5a3410; font-size: 16px; font-weight: 800; }
   #settings .sw { width: 56px; height: 30px; border-radius: 999px; position: relative; cursor: pointer; background: rgba(0,0,0,.4); border: 2px solid rgba(255,255,255,.15); transition: background .15s; }
   #settings .sw .knob { position: absolute; top: 2px; left: 2px; width: 22px; height: 22px; border-radius: 50%; background: #c9d2da; box-shadow: 0 1px 3px rgba(0,0,0,.4); transition: left .15s,background .15s; }
   #settings .sw.on { background: linear-gradient(#8dfc5c,#3fae2a); border-color: #2f5f16; }
   #settings .sw.on .knob { left: 30px; background: #fff; }
   #settings .sbtns { margin-top: 18px; display: flex; flex-direction: column; gap: 11px; }
-  #settings .sbig { padding: 15px; border-radius: 18px; background: linear-gradient(#a6e05a,#4e9c26); border: 3px solid #3d7a1c; box-shadow: 0 6px 0 #2f5f16,0 10px 18px rgba(0,0,0,.35); text-align: center; color: #1d3f0d; font-size: 24px; font-weight: 900; cursor: pointer; }
+  #settings .sbig { padding: 18px; background: url(assets/ui_btn_green.png) center/100% 100% no-repeat; border: none; text-align: center; color: #1e4d12; font-size: 23px; font-weight: 900; cursor: pointer; filter: drop-shadow(0 4px 5px rgba(0,0,0,.3)); }
   #settings .srowbtn { display: flex; gap: 11px; }
-  #settings .srowbtn > div { flex: 1; padding: 12px; border-radius: 16px; text-align: center; font-size: 18px; font-weight: 800; cursor: pointer; }
-  #settings .sreplay { background: linear-gradient(#7ad4f7,#2f8fd0); border: 3px solid #1e6aa8; box-shadow: 0 5px 0 #14507f; color: #0d3b5e; }
-  #settings .shome { background: rgba(20,28,20,.72); border: 2px solid rgba(255,200,90,.5); color: #ffe9a8; }
+  #settings .srowbtn > div { flex: 1; padding: 15px 12px; text-align: center; font-size: 17px; font-weight: 900; cursor: pointer; background-size: 100% 100%; background-repeat: no-repeat; filter: drop-shadow(0 4px 5px rgba(0,0,0,.28)); }
+  #settings .sreplay { background-image: url(assets/ui_btn_blue.png); color: #0b3350; }
+  #settings .shome { background-image: url(assets/ui_btn_wood.png); color: #4a2b08; }
 
   /* ===== 首页（入口） ===== */
   #home { position: absolute; inset: 0; z-index: 42; display: none; background: #1b3a24 url(assets/bg_home.png) center/cover no-repeat; }
@@ -169,14 +169,14 @@
   .hmini img { width: 26px; height: 26px; object-fit: contain; }
 
   /* ===== 通用二级页（商店/图鉴） ===== */
-  .page { position: absolute; inset: 0; z-index: 43; display: none; background: radial-gradient(120% 100% at 50% 0%,#2f5233,#1c3320 58%,#112417); }
+  .page { position: absolute; inset: 0; z-index: 43; display: none; background: #16281a url(assets/ui_bg.png) center/cover no-repeat; }
   .pgbar { position: absolute; top: 0; left: 0; right: 0; height: 56px; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; z-index: 2; }
   .pgback { width: 46px; height: 46px; background: url(assets/ic_back.png) center/contain no-repeat; border: none; color: transparent; font-size: 0; cursor: pointer; filter: drop-shadow(0 3px 4px rgba(0,0,0,.4)); }
-  .pgtitle { position: absolute; left: 0; right: 0; text-align: center; color: #ffe066; font-size: 24px; font-weight: 900; -webkit-text-stroke: 1.5px #7a3e12; text-shadow: 0 2px 0 #7a3e12; pointer-events: none; }
+  .pgtitle { position: absolute; left: 50%; top: 2px; transform: translateX(-50%); min-width: 240px; padding: 15px 64px 19px; background: url(assets/ui_ribbon.png) center/100% 100% no-repeat; text-align: center; color: #fff2c0; font-size: 22px; font-weight: 900; -webkit-text-stroke: 1px #7a3e12; text-shadow: 0 2px 0 #7a3e12; pointer-events: none; white-space: nowrap; }
   .pgbody { position: absolute; inset: 62px 20px 18px; display: flex; gap: 16px; }
 
   /* 商店 */
-  .shopPreview { width: 322px; flex: 0 0 auto; border-radius: 20px; background: rgba(8,16,10,.55); border: 2px solid rgba(255,200,90,.4); padding: 16px; display: flex; flex-direction: column; align-items: center; gap: 9px; }
+  .shopPreview { width: 340px; flex: 0 0 auto; border: 32px solid transparent; border-image: url(assets/ui_panel.png) 30% / 32px / 0 stretch; background: rgba(12,20,12,.7); padding: 8px 12px; display: flex; flex-direction: column; align-items: center; gap: 9px; }
   .shopPreview .spname { font-size: 12px; color: #9fcf9a; font-weight: 700; letter-spacing: 1px; }
   .shopPreview .sptitle { font-size: 24px; color: #ffe066; }
   .shopPreview .spimg { width: 170px; height: 160px; object-fit: contain; filter: drop-shadow(0 0 26px rgba(176,140,255,.35)); }
@@ -199,7 +199,7 @@
   .sktag.eq { background: #3fae2a; color: #fff; } .sktag.own { background: rgba(255,255,255,.14); color: #cfd6dd; } .sktag.buy { background: rgba(255,210,63,.2); border: 1px solid rgba(255,200,90,.7); color: #ffe9a8; }
 
   /* 图鉴 */
-  .dexDetail { width: 322px; flex: 0 0 auto; border-radius: 20px; background: rgba(8,16,10,.55); border: 2px solid rgba(255,200,90,.4); padding: 16px; display: flex; flex-direction: column; align-items: center; gap: 8px; overflow-y: auto; }
+  .dexDetail { width: 340px; flex: 0 0 auto; border: 32px solid transparent; border-image: url(assets/ui_panel.png) 30% / 32px / 0 stretch; background: rgba(12,20,12,.7); padding: 8px 12px; display: flex; flex-direction: column; align-items: center; gap: 8px; overflow-y: auto; }
   .dexDetail .dxcat { align-self: flex-start; font-size: 12px; color: #9fcf9a; font-weight: 700; }
   .dexDetail .dxname { font-size: 24px; color: #ffe066; }
   .dexDetail .dxtags { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
