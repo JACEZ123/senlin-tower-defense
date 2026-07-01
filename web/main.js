@@ -428,7 +428,16 @@
   function drawEffect(e) {
     const k = e.kind, pr = Math.min(1, e.t / e.life), X = vx(e.x), Y = vy(e.y), col = e.color || '#fff';
     ctx.save(); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-    if (k === 'chainbolt') {                  // 闪电链：连接怪物的锯齿电弧
+    if (k === 'muzzle') {                       // 开火枪口闪光：朝目标方向的星芒 + 亮心
+      const a = e.ang || 0, f = 1 - pr;
+      ctx.globalAlpha = f;
+      // 亮心
+      ctx.beginPath(); ctx.arc(X, Y, vk(7) * (0.7 + f * 0.5), 0, 7); ctx.fillStyle = '#fff'; ctx.fill();
+      ctx.beginPath(); ctx.arc(X, Y, vk(11) * (0.6 + f * 0.6), 0, 7); ctx.fillStyle = col; ctx.globalAlpha = f * 0.55; ctx.fill();
+      // 十字星芒（主轴对准射向）
+      ctx.globalAlpha = f; ctx.strokeStyle = '#fff'; ctx.lineWidth = vk(3) * f;
+      for (const d of [0, Math.PI / 2, Math.PI, -Math.PI / 2]) { const rr = (d === 0 ? vk(20) : vk(11)) * (0.6 + f * 0.7); ctx.beginPath(); ctx.moveTo(X, Y); ctx.lineTo(X + Math.cos(a + d) * rr, Y + Math.sin(a + d) * rr); ctx.stroke(); }
+    } else if (k === 'chainbolt') {                  // 闪电链：连接怪物的锯齿电弧
       ctx.globalAlpha = (1 - pr) * (0.6 + 0.4 * Math.random());
       for (let i = 0; i < e.pts.length - 1; i++) {
         const a = e.pts[i], b = e.pts[i + 1];
@@ -469,9 +478,15 @@
       ctx.globalAlpha = 1 - pr; ctx.strokeStyle = col; ctx.lineWidth = vk(2.5);
       ctx.beginPath(); ctx.arc(X, Y, vk(30) * (0.3 + pr), 0, 7); ctx.stroke();
       for (let i = 0; i < 8; i++) { const a = i * 0.785; const rr = vk(30) * (0.3 + pr); ctx.beginPath(); ctx.moveTo(X, Y); ctx.lineTo(X + Math.cos(a) * rr, Y + Math.sin(a) * rr); ctx.stroke(); }
-    } else {                                     // 单体（箭）命中星爆
-      ctx.globalAlpha = 1 - pr; ctx.strokeStyle = col; ctx.lineWidth = vk(2.5);
-      for (let i = 0; i < 6; i++) { const a = i * 1.05; const r0 = vk(3), r1 = vk(3 + 11 * pr); ctx.beginPath(); ctx.moveTo(X + Math.cos(a) * r0, Y + Math.sin(a) * r0); ctx.lineTo(X + Math.cos(a) * r1, Y + Math.sin(a) * r1); ctx.stroke(); }
+    } else {                                     // 单体（箭）命中星爆 —— 亮闪 + 冲击环 + 星芒
+      const f = 1 - pr;
+      // 白色亮闪爆心
+      ctx.globalAlpha = f * 0.9; ctx.beginPath(); ctx.arc(X, Y, vk(9) * (0.5 + pr * 0.9), 0, 7); ctx.fillStyle = '#fff'; ctx.fill();
+      // 彩色冲击环
+      ctx.globalAlpha = f; ctx.strokeStyle = col; ctx.lineWidth = vk(3) * f; ctx.beginPath(); ctx.arc(X, Y, vk(14) * (0.4 + pr), 0, 7); ctx.stroke();
+      // 放射星芒
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = vk(2.5) * f;
+      for (let i = 0; i < 8; i++) { const a = i * 0.785; const r0 = vk(4), r1 = vk(6 + 15 * pr); ctx.beginPath(); ctx.moveTo(X + Math.cos(a) * r0, Y + Math.sin(a) * r0); ctx.lineTo(X + Math.cos(a) * r1, Y + Math.sin(a) * r1); ctx.stroke(); }
     }
     ctx.restore();
   }
@@ -837,6 +852,7 @@
   $('setClose').onclick = closeSettings; $('setResume').onclick = closeSettings;
   $('setReplay').onclick = () => { closeSettings(); startLevel(level.id); };
   $('setHome').onclick = () => { closeSettings(); showMenu(); };
+  $('setHomePage').onclick = () => { closeSettings(); showHome(); };
 
   /* ---------- 启动加载页（等待页） ---------- */
   function runLoading(then) {

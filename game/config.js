@@ -11,6 +11,11 @@
 const VW = 1280, VH = 720;   // 横屏 16:9 虚拟画布
 const TOTAL_LEVELS = 40;
 
+/* ---------------- 全局平衡系数（中等偏难调校，集中可调） ----------------
+ * TOWER_DMG 塔伤害倍率(<1 更弱) / ENEMY_HP 怪物血量倍率(>1 更厚) /
+ * GOLD 经济倍率(击杀/波次/障碍金币，<1 更穷) / SPAWN_GAP 出怪间隔倍率(>1 更不密集)。 */
+const BALANCE = { TOWER_DMG: 0.8, ENEMY_HP: 1.16, GOLD: 0.7, SPAWN_GAP: 1.45 };
+
 /* ---------------- 防御塔（8 种 + 分支技能树） ----------------
  * 每塔：cost 建造价；levels[] 三级基础升级；branches{A,B} 满级后二选一专精。
  * unlock 表示在第几关解锁。img 为精灵键（部分新塔暂复用现有美术，后续替换）。
@@ -139,4 +144,4 @@ const CHEST_ITEMS = [
 ];
 const CHEST_RARITY_WEIGHT = { common: 60, rare: 30, epic: 10 };
 
-module.exports = { VW, VH, TOTAL_LEVELS, TOWERS, TOWER_KEYS, HERO, ENEMIES, CHEST_ITEMS, CHEST_RARITY_WEIGHT };
+module.exports = { VW, VH, TOTAL_LEVELS, BALANCE, TOWERS, TOWER_KEYS, HERO, ENEMIES, CHEST_ITEMS, CHEST_RARITY_WEIGHT };

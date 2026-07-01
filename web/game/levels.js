@@ -180,13 +180,13 @@ function buildLevel(n) {
     theme, bg: 'b_' + theme,
     path, obstacles, maxTowers,
     waveCount,
-    startGold: 260 + n * 7,
+    startGold: 175 + n * 4,
     startLives: 20,
     towers,
     hero: n >= (C.HERO.unlockLevel || 40),
     buildWave: (w) => buildWave(n, w, waveCount),
     wavePreview: (w) => wavePreview(n, w, waveCount),
-    waveBonus: (w) => 24 + n * 3 + w * 5,
+    waveBonus: (w) => 12 + n * 2 + w * 3,
   };
 }
 

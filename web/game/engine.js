@@ -220,7 +220,7 @@ function pushFloat(s, x, y, text, color) { s.floats.push({ x, y, text, color, t:
 function spawnEnemy(s, item, atX, atY, hpScale) {
   const def = C.ENEMIES[item.type];
   const p0 = s.level.path[0];
-  const hp = def.hp * (item.hpMul || 1) * (hpScale || 1);
+  const hp = def.hp * (item.hpMul || 1) * (hpScale || 1) * (C.BALANCE ? C.BALANCE.ENEMY_HP : 1);
   s.enemies.push({ id: s._eid++, type: item.type, def,
     x: atX != null ? atX : p0.x, y: atY != null ? atY : p0.y, seg: atX != null ? (item._seg || 0) : 0, t: 0,
     hp, maxHp: hp, spMul: item.spMul || 1, goldMul: item.goldMul != null ? item.goldMul : 1, slowT: 0, slowMul: 1, poisonT: 0, poisonDps: 0, burnT: 0, netT: 0 });
@@ -235,7 +235,7 @@ function update(s, dt) {
   }
   if (s.phase === 'spawning') {
     s.spawnTimer -= dt;
-    if (s.spawnTimer <= 0 && s.spawnQueue.length) { const it = s.spawnQueue.shift(); spawnEnemy(s, it); s.spawnTimer = it.gap; }
+    if (s.spawnTimer <= 0 && s.spawnQueue.length) { const it = s.spawnQueue.shift(); spawnEnemy(s, it); s.spawnTimer = it.gap * (C.BALANCE ? C.BALANCE.SPAWN_GAP : 1); }
     if (!s.spawnQueue.length) s.phase = 'fighting';
   }
   moveEnemies(s, dt);
@@ -252,12 +252,12 @@ function update(s, dt) {
   // 障碍物被击破：给金币、腾出可建位
   if (s.obstacles.length) {
     const live = [];
-    for (const o of s.obstacles) { if (o.hitT > 0) o.hitT -= dt; if (o.hp <= 0) { s.gold += o.gold; pushFloat(s, o.x, o.y, '+' + o.gold, '#ffd23f'); } else live.push(o); }
+    for (const o of s.obstacles) { if (o.hitT > 0) o.hitT -= dt; if (o.hp <= 0) { const og = Math.max(1, Math.round(o.gold * (C.BALANCE ? C.BALANCE.GOLD : 1))); s.gold += og; pushFloat(s, o.x, o.y, '+' + og, '#ffd23f'); } else live.push(o); }
     s.obstacles = live;
   }
   if (s.focusId && !s.enemies.some((e) => e.id === s.focusId) && !s.obstacles.some((o) => o.id === s.focusId)) s.focusId = 0;
   if (s.phase === 'fighting' && s.enemies.length === 0) {
-    s.gold += s.level.waveBonus(s.wave);
+    s.gold += Math.round(s.level.waveBonus(s.wave) * (C.BALANCE ? C.BALANCE.GOLD : 1));
     if (s.wave >= s.totalWaves) s.phase = 'won'; else { s.phase = 'ready'; s.nextTimer = s.betweenDelay; }
   }
   if (s.lives <= 0) { s.lives = 0; s.phase = 'lost'; }
@@ -292,7 +292,7 @@ function moveEnemies(s, dt) {
 }
 
 function onDeath(s, e) {
-  const g = Math.max(1, Math.round(e.def.gold * (e.goldMul || 1)));   // 前期怪给钱少(goldMul)
+  const g = Math.max(1, Math.round(e.def.gold * (e.goldMul || 1) * (C.BALANCE ? C.BALANCE.GOLD : 1)));   // 前期怪给钱少(goldMul) + 全局经济系数
   s.gold += g; pushFloat(s, e.x, e.y, '+' + g, '#ffd23f');
   if (e.def.split && !e._splitChild) {
     for (let i = 0; i < e.def.split; i++) {
@@ -342,9 +342,13 @@ function runTowers(s, dt) {
 
 function fire(s, x, y, target, st) {
   const bl = st.bullet || { color: '#fff', speed: 600, r: 5 };
-  s.bullets.push({ x, y, sx: x, sy: y, target, dmg: st.dmg, speed: bl.speed, color: bl.color, r: bl.r,
+  const dmg = st.dmg * (C.BALANCE ? C.BALANCE.TOWER_DMG : 1);   // 全局塔伤系数(中等偏难)
+  s.bullets.push({ x, y, sx: x, sy: y, target, dmg, speed: bl.speed, color: bl.color, r: bl.r,
     attack: st.attack, splash: st.splash, slow: st.slow, slowDur: st.slowDur, dot: st.dot, dotDur: st.dotDur,
     chain: st.chain, chainFalloff: st.chainFalloff, crit: st.crit, critMul: st.critMul });
+  // 开火枪口闪光特效（指向目标方向）
+  const ang = Math.atan2(target.y - y, target.x - x);
+  s.effects.push({ kind: 'muzzle', x: x + Math.cos(ang) * 14, y: y + Math.sin(ang) * 14, ang, color: bl.color, t: 0, life: 0.16 });
 }
 
 function runBullets(s, dt) {
