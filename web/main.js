@@ -347,6 +347,7 @@
     if (a && a.frames > 1) { sw = im.width / a.frames; const fr = (opt && opt.frame != null) ? (opt.frame % a.frames) : (Math.floor(anim * a.fps) % a.frames); sx = fr * sw; }
     const sq = opt && opt.squash ? opt.squash : 1, H = vk(h) * sq, Wd = vk(h) * (sw / sh) * (opt && opt.flash ? 1.04 : 1);
     ctx.save(); ctx.filter = (opt && opt.flash) ? 'brightness(2.6) saturate(.4)' : (grade || 'none');
+    if (opt && opt.flip) { const X = vx(cx); ctx.translate(X, 0); ctx.scale(-1, 1); ctx.translate(-X, 0); }   // 水平镜像(朝向目标)
     ctx.drawImage(im, sx, 0, sw, sh, vx(cx) - Wd / 2, vy(cy) - H * (foot == null ? 0.82 : foot), Wd, H);
     ctx.restore();
   }
@@ -549,15 +550,16 @@
       // 避免低级塔开火时错误显示成高级形象（#3 修复）
       const atk = ATK[t.key], tsf = st.rate - t.cd, ATKDUR = 0.42, isMax = t.branch || t.level >= 2, firing = tsf >= 0 && tsf < ATKDUR;
       const sid = equippedSkin(t.key), skIdle = sid && `skidle_${t.key}_${sid}`, skAtk = sid && `skatk_${t.key}_${sid}`;
+      const faceLeft = Math.cos(t.angle) < -0.15;   // 目标在左侧 → 镜像朝左，让塔面向怪物
       // 皮肤=终极形态外观：仅当塔升到最高级/进化(isMax)才生效；1/2 级仍用各自进阶形象
       if (sid && isMax && IMG[skAtk] && firing) {                            // 皮肤攻击动画
-        drawSprite(skAtk, t.x, t.y + 4, 80, 0.78, { frame: Math.floor((tsf / ATKDUR) * 16) });
+        drawSprite(skAtk, t.x, t.y + 4, 80, 0.78, { frame: Math.floor((tsf / ATKDUR) * 16), flip: faceLeft });
       } else if (sid && isMax && IMG[skIdle]) {                              // 皮肤待机动画
-        drawSprite(skIdle, t.x, t.y + 4 + bob, 78 * punch, 0.78);
+        drawSprite(skIdle, t.x, t.y + 4 + bob, 78 * punch, 0.78, { flip: faceLeft });
       } else if (atk && isMax && firing) {                                   // 默认攻击动画(仅3级/分支)
-        drawSprite(atk.asset, t.x, t.y + 4, 80, 0.78, { frame: Math.floor((tsf / ATKDUR) * atk.frames) });
+        drawSprite(atk.asset, t.x, t.y + 4, 80, 0.78, { frame: Math.floor((tsf / ATKDUR) * atk.frames), flip: faceLeft });
       } else {
-        drawSprite(towerImg(t), t.x, t.y + 4 + bob, 78 * punch, 0.78);
+        drawSprite(towerImg(t), t.x, t.y + 4 + bob, 78 * punch, 0.78, { flip: faceLeft });
       }
       const dots = t.branch ? 4 : t.level + 1; for (let k = 0; k < dots; k++) { ctx.beginPath(); ctx.arc(vx(t.x) - vk(12) + vk(8) * k, vy(t.y) + vk(11), vk(2.8), 0, 7); ctx.fillStyle = t.branch ? '#b6ff5a' : '#ffd23f'; ctx.fill(); }
     }
