@@ -42,6 +42,9 @@
       else if (tag.startsWith('atk_')) { ANIM[asset] = { frames, fps: 24 }; ATK[tag.slice(4)] = { asset, frames }; }
     }
   } catch (e) { /* 清单不存在则全部走静态/已配置动画 */ }
+  // 皮肤清单(生成流水线产出): { towerKey: [{id,name,gem}] }
+  let SKINMAN = {};
+  try { SKINMAN = await (await fetch('assets/skins/skins_manifest.json?' + Date.now())).json(); } catch (e) { SKINMAN = {}; }
   let menu = null;   // 就地环形菜单 {mode:'build'|'manage', x, y, towerId, items:[{img,label,sub,action,enabled}]}
   // #6 环境色调融合：给所有精灵套一层与该主题光照一致的轻度滤镜，使卡通角色"落"进画面
   // 暖色主题用 sepia+轻微 hue-rotate 统一暖调；冷色主题只调亮度/饱和，不旋转色相(避免角色变蓝失真)
@@ -66,6 +69,24 @@
   const gems = () => { try { return parseInt(localStorage.getItem(GKEY), 10) || 0; } catch { return 0; } };
   const setGems = (v) => localStorage.setItem(GKEY, String(Math.max(0, v | 0)));
   const addGems = (n) => { setGems(gems() + n); return gems(); };
+  // 皮肤拥有/装备持久化：{ owned:{'arrow_royal':true}, equip:{arrow:'royal'} }
+  const SKKEY = 'wttl_skins';
+  const skinData = () => { try { return JSON.parse(localStorage.getItem(SKKEY)) || { owned: {}, equip: {} }; } catch { return { owned: {}, equip: {} }; } };
+  const saveSkins = (d) => localStorage.setItem(SKKEY, JSON.stringify(d));
+  const equippedSkin = (key) => { const e = skinData().equip[key]; return e && e !== 'default' ? e : null; };   // 皮肤id或null(默认)
+  // 游戏内换装：懒加载已装备皮肤的待机/攻击精灵表并注册动画
+  function ensureSkinSheets(k) {
+    const id = equippedSkin(k); if (!id) return;
+    for (const kind of ['idle', 'atk']) {
+      const key = `sk${kind}_${k}_${id}`;
+      if (key in IMG) continue;                       // 已尝试(成功=Image, 失败=null)
+      IMG[key] = null;
+      const im = new Image();
+      im.onload = () => { IMG[key] = im; ANIM[key] = { frames: 16, fps: kind === 'idle' ? 12 : 24 }; };
+      im.onerror = () => { IMG[key] = null; };
+      im.src = `assets/skins/sheet_${kind}_${k}_${id}.png`;
+    }
+  }
 
   let state = null, level = null, anim = 0, speed = 1, popupSlot = -1, unlockQ = [];
   let baseHitAt = -99, lastLives = null, cutBusy = false, paused = false;   // 基地受击时刻 / 上帧生命 / 过场播放中 / 手动暂停
@@ -140,25 +161,62 @@
     $('homeGems').textContent = gems();
   }
 
-  /* ---------- 商店（守卫外观，展示为主） ---------- */
-  let shopSel = 0;
-  function showShop() { hideScreens(); $('shop').style.display = 'block'; $('shopGems').textContent = gems(); renderShop(); }
+  /* ---------- 商店（角色特色皮肤：钻石购买 + 装备） ---------- */
+  let shopChar = 'arrow', shopSel = 'default';
+  function showShop() { hideScreens(); $('shop').style.display = 'block'; shopSel = 'default'; renderShop(); }
+  // 某角色的皮肤列表：default + 清单皮肤(缺图由 onerror 兜底，生成后自动显示)
+  function skinsOf(k) { return [{ id: 'default', name: '默认', gem: 0 }].concat(SKINMAN[k] || []); }
+  function skinImg(k, id) { return id === 'default' ? `assets/tw_${k}_s3.png` : `assets/skins/tw_${k}_${id}.png`; }
   function renderShop() {
-    const p = prog(), grid = $('shopGrid'); grid.innerHTML = '';
-    C.TOWER_KEYS.forEach((k, i) => {
-      const d = C.TOWERS[k], owned = d.unlock <= p.cleared + 1;
-      const el = document.createElement('div'); el.className = 'skin' + (i === shopSel ? ' sel' : '');
-      const tag = i === 0 ? '<div class="sktag eq">已装备</div>' : owned ? '<div class="sktag own">已拥有</div>' : `<div class="sktag buy">通关 ${d.unlock}</div>`;
-      el.innerHTML = `<img src="assets/tw_${k}_s3.png" onerror="this.src='assets/tw_${k}_1.png'"><div class="sknm">${d.name}</div>${tag}`;
-      el.onclick = () => { shopSel = i; renderShop(); };
+    $('shopGems').textContent = gems();
+    const sd = skinData();
+    // 角色选择行
+    const cbar = $('shopChars'); cbar.innerHTML = '';
+    C.TOWER_KEYS.forEach((k) => {
+      const el = document.createElement('div'); el.className = 'shopChar' + (k === shopChar ? ' on' : '');
+      el.innerHTML = `<img src="assets/tw_${k}_1.png" onerror="this.style.display='none'">`;
+      el.onclick = () => { shopChar = k; shopSel = 'default'; renderShop(); };
+      cbar.appendChild(el);
+    });
+    // 皮肤网格
+    const list = skinsOf(shopChar), grid = $('shopGrid'); grid.innerHTML = '';
+    list.forEach((s) => {
+      const owned = s.id === 'default' || sd.owned[`${shopChar}_${s.id}`];
+      const equipped = (sd.equip[shopChar] || 'default') === s.id;
+      const el = document.createElement('div'); el.className = 'skin' + (s.id === shopSel ? ' sel' : '');
+      const tag = equipped ? '<div class="sktag eq">已装备</div>' : owned ? '<div class="sktag own">已拥有</div>'
+        : `<div class="sktag buy"><img src="assets/ic_gem.png" onerror="this.style.display='none'" style="width:11px;height:11px;vertical-align:-1px"> ${s.gem}</div>`;
+      el.innerHTML = `<img class="skthumb" src="${skinImg(shopChar, s.id)}" onerror="this.src='assets/tw_${shopChar}_1.png'"><div class="sknm">${s.name}</div>${tag}`;
+      el.onclick = () => { shopSel = s.id; renderShop(); };
       grid.appendChild(el);
     });
-    const k = C.TOWER_KEYS[shopSel], d = C.TOWERS[k];
+    renderShopPreview();
+  }
+  function renderShopPreview() {
+    const k = shopChar, id = shopSel, d = C.TOWERS[k], sd = skinData();
+    const s = id === 'default' ? { id: 'default', name: '默认', gem: 0 } : (SKINMAN[k] || []).find((x) => x.id === id) || { id, name: id, gem: 0 };
+    const owned = id === 'default' || sd.owned[`${k}_${id}`];
+    const equipped = (sd.equip[k] || 'default') === id;
+    // 预览优先用待机 gif（透明），无则静态立绘
+    const gif = id === 'default' ? '' : `assets/skins/idle_${k}_${id}.gif`;
+    const still = skinImg(k, id);
+    const previewImg = gif
+      ? `<img class="spimg" src="${gif}" onerror="this.onerror=null;this.src='${still}'">`
+      : `<img class="spimg" src="${still}" onerror="this.src='assets/tw_${k}_1.png'">`;
+    let btn;
+    if (equipped) btn = `<div class="spbuy" style="background:#3fae2a;color:#fff">已装备</div>`;
+    else if (owned) btn = `<div class="spbuy" id="spEquip" style="background:linear-gradient(#7ad4f7,#2f8fd0);color:#08324f">装备</div>`;
+    else btn = `<div class="spbuy" id="spBuy"><img src="assets/ic_gem.png" onerror="this.style.display='none'" style="width:18px;height:18px;vertical-align:-3px"> ${s.gem} · 购买</div>`;
     $('shopPreview').innerHTML =
-      `<div class="spname">守卫 · 外观</div><div class="sptitle">${d.name}</div>` +
-      `<img class="spimg" src="assets/tw_${k}_s3.png" onerror="this.src='assets/tw_${k}_1.png'">` +
-      `<div class="spdesc">${ATKDESC[d.attack] || ''} · 造价 ${d.cost}<br>满级专精：${d.branches.A.name} / ${d.branches.B.name}</div>` +
-      `<div class="spbuy">${shopSel === 0 ? '已装备' : '敬请期待'}</div>`;
+      `<div class="spname">${d.name} · 皮肤</div><div class="sptitle">${s.name}</div>` +
+      previewImg +
+      `<div class="spdesc">${ATKDESC[d.attack] || ''} · 仅改变外观，属性不变<br>${id === 'default' ? '守卫默认外观' : '含专属待机 / 攻击动画'}</div>` +
+      btn;
+    const buy = $('spBuy'); if (buy) buy.onclick = () => {
+      if (gems() < s.gem) { buy.textContent = '钻石不足'; return; }
+      addGems(-s.gem); const d2 = skinData(); d2.owned[`${k}_${id}`] = true; d2.equip[k] = id; saveSkins(d2); renderShop();
+    };
+    const eq = $('spEquip'); if (eq) eq.onclick = () => { const d2 = skinData(); d2.equip[k] = id; saveSkins(d2); renderShop(); };
   }
 
   /* ---------- 图鉴（守卫/怪物/Boss） ---------- */
@@ -224,6 +282,7 @@
     grade = THEME_GRADE[level.theme] || ''; setPaused(false);
     baseHitAt = -99; lastLives = null;
     popupSlot = -1; for (const k in hud) delete hud[k];
+    level.towers.forEach(ensureSkinSheets);   // 预载已装备皮肤精灵表
     hideScreens();   // 隐藏首页/选关/商店/图鉴/设置等一切界面
     // 解锁说明 (#9)：本关新解锁、且没看过的塔
     const p = prog(); unlockQ = level.towers.filter((k) => C.TOWERS[k].unlock === n && !p.seen.includes(k));
@@ -413,8 +472,13 @@
       ctx.beginPath(); ctx.ellipse(px, py - vk(1), vk(19), vk(9), 0, 0, 7); ctx.fillStyle = 'rgba(255,235,190,.35)'; ctx.fill();
       // 攻击动画：仅 3级/分支塔播放攻击精灵表(该表按3级形象生成)；1/2级塔用各自静态形象+回弹，
       // 避免低级塔开火时错误显示成高级形象（#3 修复）
-      const atk = ATK[t.key], tsf = st.rate - t.cd, ATKDUR = 0.42, isMax = t.branch || t.level >= 2;
-      if (atk && isMax && tsf >= 0 && tsf < ATKDUR) {
+      const atk = ATK[t.key], tsf = st.rate - t.cd, ATKDUR = 0.42, isMax = t.branch || t.level >= 2, firing = tsf >= 0 && tsf < ATKDUR;
+      const sid = equippedSkin(t.key), skIdle = sid && `skidle_${t.key}_${sid}`, skAtk = sid && `skatk_${t.key}_${sid}`;
+      if (sid && IMG[skAtk] && firing) {                                    // 皮肤攻击动画
+        drawSprite(skAtk, t.x, t.y + 4, 80, 0.78, { frame: Math.floor((tsf / ATKDUR) * 16) });
+      } else if (sid && IMG[skIdle]) {                                       // 皮肤待机动画(各等级同一皮肤外观)
+        drawSprite(skIdle, t.x, t.y + 4 + bob, 78 * punch, 0.78);
+      } else if (atk && isMax && firing) {                                   // 默认攻击动画(仅3级/分支)
         drawSprite(atk.asset, t.x, t.y + 4, 80, 0.78, { frame: Math.floor((tsf / ATKDUR) * atk.frames) });
       } else {
         drawSprite(towerImg(t), t.x, t.y + 4 + bob, 78 * punch, 0.78);

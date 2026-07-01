@@ -1,0 +1,218 @@
+{
+  "arrow": [
+    {
+      "id": "royal",
+      "name": "皇家禁卫",
+      "gem": 120
+    },
+    {
+      "id": "shadow",
+      "name": "暗影忍者",
+      "gem": 150
+    },
+    {
+      "id": "pirate",
+      "name": "怒海船长",
+      "gem": 150
+    },
+    {
+      "id": "frostx",
+      "name": "寒霜之铠",
+      "gem": 180
+    },
+    {
+      "id": "inferno",
+      "name": "烈焰战魂",
+      "gem": 200
+    }
+  ],
+  "cannon": [
+    {
+      "id": "royal",
+      "name": "皇家禁卫",
+      "gem": 120
+    },
+    {
+      "id": "shadow",
+      "name": "暗影忍者",
+      "gem": 150
+    },
+    {
+      "id": "pirate",
+      "name": "怒海船长",
+      "gem": 150
+    },
+    {
+      "id": "frostx",
+      "name": "寒霜之铠",
+      "gem": 180
+    },
+    {
+      "id": "inferno",
+      "name": "烈焰战魂",
+      "gem": 200
+    }
+  ],
+  "frost": [
+    {
+      "id": "royal",
+      "name": "皇家禁卫",
+      "gem": 120
+    },
+    {
+      "id": "shadow",
+      "name": "暗影忍者",
+      "gem": 150
+    },
+    {
+      "id": "pirate",
+      "name": "怒海船长",
+      "gem": 150
+    },
+    {
+      "id": "frostx",
+      "name": "寒霜之铠",
+      "gem": 180
+    },
+    {
+      "id": "inferno",
+      "name": "烈焰战魂",
+      "gem": 200
+    }
+  ],
+  "poison": [
+    {
+      "id": "royal",
+      "name": "皇家禁卫",
+      "gem": 120
+    },
+    {
+      "id": "shadow",
+      "name": "暗影忍者",
+      "gem": 150
+    },
+    {
+      "id": "pirate",
+      "name": "怒海船长",
+      "gem": 150
+    },
+    {
+      "id": "frostx",
+      "name": "寒霜之铠",
+      "gem": 180
+    },
+    {
+      "id": "inferno",
+      "name": "烈焰战魂",
+      "gem": 200
+    }
+  ],
+  "lightning": [
+    {
+      "id": "royal",
+      "name": "皇家禁卫",
+      "gem": 120
+    },
+    {
+      "id": "shadow",
+      "name": "暗影忍者",
+      "gem": 150
+    },
+    {
+      "id": "pirate",
+      "name": "怒海船长",
+      "gem": 150
+    },
+    {
+      "id": "frostx",
+      "name": "寒霜之铠",
+      "gem": 180
+    },
+    {
+      "id": "inferno",
+      "name": "烈焰战魂",
+      "gem": 200
+    }
+  ],
+  "sniper": [
+    {
+      "id": "royal",
+      "name": "皇家禁卫",
+      "gem": 120
+    },
+    {
+      "id": "shadow",
+      "name": "暗影忍者",
+      "gem": 150
+    },
+    {
+      "id": "pirate",
+      "name": "怒海船长",
+      "gem": 150
+    },
+    {
+      "id": "frostx",
+      "name": "寒霜之铠",
+      "gem": 180
+    },
+    {
+      "id": "inferno",
+      "name": "烈焰战魂",
+      "gem": 200
+    }
+  ],
+  "flame": [
+    {
+      "id": "royal",
+      "name": "皇家禁卫",
+      "gem": 120
+    },
+    {
+      "id": "shadow",
+      "name": "暗影忍者",
+      "gem": 150
+    },
+    {
+      "id": "pirate",
+      "name": "怒海船长",
+      "gem": 150
+    },
+    {
+      "id": "frostx",
+      "name": "寒霜之铠",
+      "gem": 180
+    },
+    {
+      "id": "inferno",
+      "name": "烈焰战魂",
+      "gem": 200
+    }
+  ],
+  "arcane": [
+    {
+      "id": "royal",
+      "name": "皇家禁卫",
+      "gem": 120
+    },
+    {
+      "id": "shadow",
+      "name": "暗影忍者",
+      "gem": 150
+    },
+    {
+      "id": "pirate",
+      "name": "怒海船长",
+      "gem": 150
+    },
+    {
+      "id": "frostx",
+      "name": "寒霜之铠",
+      "gem": 180
+    },
+    {
+      "id": "inferno",
+      "name": "烈焰战魂",
+      "gem": 200
+    }
+  ]
+}
