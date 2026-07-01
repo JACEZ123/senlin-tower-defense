@@ -68,6 +68,76 @@
   #cutSkip { position: absolute; right: 16px; bottom: 14px; z-index: 51; padding: 7px 16px; border-radius: 999px; background: rgba(0,0,0,.55); border: 2px solid rgba(255,255,255,.4); color: #fff; font-size: 13px; font-weight: 800; cursor: pointer; }
   #cutTag { position: absolute; left: 0; right: 0; top: 12%; z-index: 51; text-align: center; color: #fff; font-size: 34px; font-weight: 900; letter-spacing: 4px; text-shadow: 0 3px 8px rgba(0,0,0,.8); pointer-events: none; }
 
+  /* ===== 设计稿动画 ===== */
+  @keyframes wtbob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-9px)} }
+  @keyframes wtfloat { 0%,100%{transform:translateY(0) rotate(-3deg)} 50%{transform:translateY(-13px) rotate(3deg)} }
+  @keyframes wtshim { 0%{transform:translateX(-160%)} 100%{transform:translateX(420%)} }
+  @keyframes wtpulse { 0%,100%{box-shadow:0 5px 0 #2f5f16,0 0 0 0 rgba(124,252,77,.55)} 50%{box-shadow:0 5px 0 #2f5f16,0 0 0 13px rgba(124,252,77,0)} }
+  @keyframes wtdot { 0%,80%,100%{opacity:.25;transform:translateY(0)} 40%{opacity:1;transform:translateY(-3px)} }
+
+  /* ===== 启动加载页（等待页） ===== */
+  #loading { position: absolute; inset: 0; z-index: 60; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+             background: #1b3a24 center/cover no-repeat; overflow: hidden; }
+  #loading::after { content:""; position:absolute; inset:0; background: linear-gradient(180deg,rgba(10,25,15,.15),rgba(8,20,12,.55)); }
+  #loading > * { position: relative; z-index: 1; }
+  #loading .mascot { width: 120px; height: 120px; object-fit: contain; animation: wtbob 2.6s ease-in-out infinite; filter: drop-shadow(0 6px 8px rgba(0,0,0,.45)); }
+  #loading .ldlogo { width: 60%; max-width: 460px; height: auto; filter: drop-shadow(0 6px 10px rgba(0,0,0,.5)); }
+  #loading .ldsub { color: #e7f0d8; font-size: 14px; font-weight: 700; letter-spacing: 2px; opacity: .92; }
+  #loading .ldbar { margin-top: 6px; width: min(520px,74vw); padding: 9px; border-radius: 22px; background: linear-gradient(#7a4a1c,#5a3410); border: 2px solid #b9742a; box-shadow: 0 5px 12px rgba(0,0,0,.4); }
+  #loading .ldtrack { position: relative; height: 28px; border-radius: 14px; background: #2a1c0e; overflow: hidden; }
+  #loading .ldfill { position: absolute; left: 0; top: 0; bottom: 0; width: 0%; border-radius: 14px; background: linear-gradient(#8dfc5c,#3fae2a); box-shadow: inset 0 2px 3px rgba(255,255,255,.35); transition: width .25s; }
+  #loading .ldshim { position: absolute; top: 0; bottom: 0; width: 70px; background: linear-gradient(90deg,transparent,rgba(255,255,255,.55),transparent); animation: wtshim 1.6s linear infinite; }
+  #loading .ldpct { position: absolute; inset: 0; display: grid; place-items: center; font-size: 15px; font-weight: 800; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.6); }
+  #loading .ldtip { color: #ffe9a8; font-size: 13px; font-weight: 700; }
+  #loading .lddots { display: flex; align-items: center; gap: 5px; color: #dfe8d0; font-size: 13px; font-weight: 700; }
+  #loading .lddots i { animation: wtdot 1.2s infinite; font-style: normal; }
+  #loading .ldver { position: absolute; left: 16px; bottom: 12px; z-index: 1; font-size: 12px; color: rgba(255,255,255,.55); font-weight: 700; }
+
+  /* ===== 选关页·蜿蜒地图 ===== */
+  #menu.mapmode { justify-content: flex-start; padding: 0; overflow: hidden; }
+  #mapTop { position: absolute; top: 0; left: 0; right: 0; height: 54px; z-index: 3; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; background: linear-gradient(rgba(8,20,12,.5),transparent); }
+  #mapTop .mtitle { color: #ffe066; font-size: 22px; font-weight: 900; text-shadow: 0 2px 0 #7a3e12; -webkit-text-stroke: 1px #7a3e12; }
+  #mapTop .mprog { display: flex; align-items: center; gap: 6px; padding: 5px 14px; border-radius: 999px; background: rgba(20,28,20,.74); border: 2px solid rgba(255,200,90,.55); color: #ffe9a8; font-size: 14px; font-weight: 800; }
+  #chapters { display: flex; gap: 8px; position: absolute; top: 60px; left: 0; right: 0; z-index: 3; justify-content: center; flex-wrap: wrap; padding: 0 12px; margin: 0; }
+  .chap { padding: 7px 14px; border-radius: 14px; font-weight: 800; font-size: 13px; cursor: pointer; color: #e6d5c0; background: rgba(20,28,20,.72); border: 2px solid rgba(255,200,90,.35); white-space: nowrap; }
+  .chap.on { background: linear-gradient(#ffd868,#f0a521); border-color: #b9742a; color: #5a3410; box-shadow: 0 3px 0 #9c5f1f; }
+  .chap.lock { opacity: .6; color: #9aa6b0; cursor: not-allowed; }
+  #mapArea { position: absolute; inset: 0; z-index: 1; background: #1b3a24 center/cover no-repeat; }
+  #mapArea::after { content:""; position:absolute; inset:0; background: linear-gradient(180deg,rgba(8,20,12,.5),rgba(8,20,12,.15) 35%,rgba(8,20,12,.45)); }
+  #mapSvg { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 2; }
+  .node { position: absolute; z-index: 3; width: 74px; height: 74px; transform: translate(-50%,-50%); cursor: pointer; }
+  .node .disc { width: 74px; height: 74px; border-radius: 50%; border: 4px solid #fff3d0; display: grid; place-items: center; font-size: 28px; font-weight: 900; }
+  .node.cleared .disc { background: linear-gradient(#ffd868,#e0912a); color: #6b3d10; box-shadow: 0 5px 0 #9c5f1f,0 8px 14px rgba(0,0,0,.4); }
+  .node.current .disc { background: linear-gradient(#a6e05a,#4e9c26); color: #1d3f0d; border-color: #eaffcf; animation: wtpulse 1.8s infinite; }
+  .node.locked { cursor: not-allowed; }
+  .node.locked .disc { background: linear-gradient(#8a94a0,#59626d); color: #cfd6dd; border-color: #cfd6dd; box-shadow: 0 5px 0 #3d444d,0 8px 14px rgba(0,0,0,.4); }
+  .node .stars { position: absolute; top: -18px; left: 50%; transform: translateX(-50%); display: flex; gap: 1px; }
+  .node .stars img { width: 14px; height: 14px; object-fit: contain; }
+  .node .badge { position: absolute; top: -26px; left: 50%; transform: translateX(-50%); padding: 2px 9px; border-radius: 8px; background: #3fae2a; border: 2px solid #eaffcf; color: #fff; font-size: 10px; font-weight: 900; white-space: nowrap; box-shadow: 0 2px 5px rgba(0,0,0,.35); }
+  .node .lk { width: 30px; height: 30px; object-fit: contain; }
+  #mapCta { position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); z-index: 3; padding: 11px 34px; border-radius: 18px; background: linear-gradient(#ffd868,#f2a531); border: 3px solid #b9742a; box-shadow: 0 5px 0 #9c5f1f,0 9px 16px rgba(0,0,0,.35); color: #5a3410; font-size: 20px; font-weight: 900; cursor: pointer; }
+  #mapBack { position: absolute; left: 16px; bottom: 18px; z-index: 3; width: 44px; height: 44px; border-radius: 14px; background: rgba(20,28,20,.74); border: 2px solid rgba(255,200,90,.55); color: #ffe9a8; font-size: 22px; display: grid; place-items: center; cursor: pointer; }
+
+  /* ===== 设置 / 暂停面板 ===== */
+  #settings { position: absolute; inset: 0; z-index: 45; display: none; align-items: center; justify-content: center; background: rgba(6,14,9,.62); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
+  #settings .scard { width: 440px; max-width: 90vw; border-radius: 26px; background: linear-gradient(#2e3d26,#1b271a); border: 3px solid rgba(255,200,90,.6); box-shadow: 0 24px 60px rgba(0,0,0,.6); padding: 24px 28px 26px; position: relative; }
+  #settings .sclose { position: absolute; right: 14px; top: 14px; width: 30px; height: 30px; border-radius: 50%; background: rgba(0,0,0,.35); border: 1.5px solid rgba(255,255,255,.25); color: #fff; font-size: 16px; display: grid; place-items: center; cursor: pointer; }
+  #settings .stitle { text-align: center; color: #ffe066; font-size: 28px; font-weight: 900; -webkit-text-stroke: 1.5px #7a3e12; text-shadow: 0 3px 0 #7a3e12; }
+  #settings .ssub { text-align: center; color: #9fcf9a; font-size: 13px; font-weight: 700; margin-top: 2px; }
+  #settings .stog { margin-top: 18px; display: flex; flex-direction: column; gap: 10px; }
+  #settings .srow { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-radius: 14px; background: rgba(10,18,10,.5); border: 2px solid rgba(255,200,90,.3); }
+  #settings .srow .lbl { display: flex; align-items: center; gap: 10px; color: #e8f0e0; font-size: 16px; font-weight: 800; }
+  #settings .sw { width: 56px; height: 30px; border-radius: 999px; position: relative; cursor: pointer; background: rgba(0,0,0,.4); border: 2px solid rgba(255,255,255,.15); transition: background .15s; }
+  #settings .sw .knob { position: absolute; top: 2px; left: 2px; width: 22px; height: 22px; border-radius: 50%; background: #c9d2da; box-shadow: 0 1px 3px rgba(0,0,0,.4); transition: left .15s,background .15s; }
+  #settings .sw.on { background: linear-gradient(#8dfc5c,#3fae2a); border-color: #2f5f16; }
+  #settings .sw.on .knob { left: 30px; background: #fff; }
+  #settings .sbtns { margin-top: 18px; display: flex; flex-direction: column; gap: 11px; }
+  #settings .sbig { padding: 15px; border-radius: 18px; background: linear-gradient(#a6e05a,#4e9c26); border: 3px solid #3d7a1c; box-shadow: 0 6px 0 #2f5f16,0 10px 18px rgba(0,0,0,.35); text-align: center; color: #1d3f0d; font-size: 24px; font-weight: 900; cursor: pointer; }
+  #settings .srowbtn { display: flex; gap: 11px; }
+  #settings .srowbtn > div { flex: 1; padding: 12px; border-radius: 16px; text-align: center; font-size: 18px; font-weight: 800; cursor: pointer; }
+  #settings .sreplay { background: linear-gradient(#7ad4f7,#2f8fd0); border: 3px solid #1e6aa8; box-shadow: 0 5px 0 #14507f; color: #0d3b5e; }
+  #settings .shome { background: rgba(20,28,20,.72); border: 2px solid rgba(255,200,90,.5); color: #ffe9a8; }
+
   #overlay { position: absolute; inset: 0; background: rgba(0,0,0,.7); z-index: 30; display: none; align-items: center; justify-content: center; }
   #overlay .box { background: rgba(22,30,22,.98); border: 2px solid rgba(255,200,90,.55); border-radius: 18px; padding: 22px 32px; text-align: center; }
   #overlay .t { color: #ffe9a8; font-size: 24px; font-weight: 900; } #overlay .s { color: #c8b89f; font-size: 13px; margin: 8px 0 14px; }
@@ -88,11 +158,48 @@
   <div id="cut"><video id="cutVid" playsinline muted preload="auto"></video><div id="cutTag"></div><div id="cutSkip">跳过</div></div>
   <div id="unlock"><div class="ucard"><div class="uglow"><img id="uImg"></div><div class="un" id="uName"></div><div class="ud" id="uDesc"></div><div class="btn up" id="uOk" style="display:inline-block">知道了</div></div></div>
   <div id="overlay"><div class="box"><div class="t" id="ovT"></div><div class="s" id="ovS"></div><div class="row"><div class="btn up" id="ovNext">下一关</div><div class="btn sell" id="ovReplay">重玩</div><div class="btn" style="background:#557" id="ovMenu">选关</div></div></div></div>
-  <div id="menu">
-    <img id="logo" class="logo" src="assets/logo_title.png" alt="森林塔防大作战" onerror="this.style.display='none';document.getElementById('logoTxt').style.display='block'">
-    <h1 id="logoTxt" style="display:none">森林塔防大作战</h1>
-    <div class="sub2">40关塔防 · 逐关解锁守卫与技能 · 英雄于第40关登场</div>
-    <div id="chapters"></div><div id="lvlGrid"></div>
+  <div id="menu" class="mapmode">
+    <div id="mapArea"></div>
+    <svg id="mapSvg" viewBox="0 0 1280 720" preserveAspectRatio="none"><path id="mapPath" fill="none" stroke="#ffe9a8" stroke-width="9" stroke-linecap="round" stroke-dasharray="2 24" opacity="0.6"></path></svg>
+    <div id="mapTop">
+      <div class="mtitle" id="mapTitle">翠绿草原</div>
+      <div class="mprog"><img class="hud-ic" src="assets/ic_star.png" alt=""> <span id="mapCleared">0</span>/40</div>
+    </div>
+    <div id="chapters"></div>
+    <div id="mapNodes"></div>
+    <div id="mapBack">←</div>
+    <div id="mapCta">进入 第 1 关 →</div>
+  </div>
+
+  <!-- 设置 / 暂停面板 -->
+  <div id="settings">
+    <div class="scard">
+      <div class="sclose" id="setClose">×</div>
+      <div class="stitle">⏸ 游戏暂停</div>
+      <div class="ssub" id="setSub">第 1 关 · 翠绿草原</div>
+      <div class="stog">
+        <div class="srow"><div class="lbl">🎵 音乐</div><div class="sw on" id="swMusic"><div class="knob"></div></div></div>
+        <div class="srow"><div class="lbl">🔊 音效</div><div class="sw on" id="swSfx"><div class="knob"></div></div></div>
+      </div>
+      <div class="sbtns">
+        <div class="sbig" id="setResume">继续游戏 ▶</div>
+        <div class="srowbtn">
+          <div class="sreplay" id="setReplay">↻ 重玩本关</div>
+          <div class="shome" id="setHome">返回选关</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 启动加载页（等待页） -->
+  <div id="loading">
+    <img class="mascot" src="assets/tw_arrow_1.png" alt="" onerror="this.style.display='none'">
+    <img class="ldlogo" src="assets/logo_title.png" alt="森林塔防大作战" onerror="this.style.display='none'">
+    <div class="ldsub">40 关塔防 · 8 大主题世界</div>
+    <div class="ldbar"><div class="ldtrack"><div class="ldfill" id="ldFill"></div><div class="ldshim"></div><div class="ldpct" id="ldPct">0%</div></div></div>
+    <div class="ldtip">💡 小提示 · 满级守卫可二选一专精分支</div>
+    <div class="lddots">加载资源中<i>●</i><i style="animation-delay:.2s">●</i><i style="animation-delay:.4s">●</i></div>
+    <div class="ldver">v1.0.0</div>
   </div>
 </div>
 <script src="main.js"></script>

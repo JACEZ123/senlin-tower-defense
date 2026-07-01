@@ -66,28 +66,64 @@
   let baseHitAt = -99, lastLives = null, cutBusy = false;   // 基地受击时刻 / 上帧生命 / 过场视频播放中
   const $ = (id) => document.getElementById(id);
 
-  /* ---------- 选关 ---------- */
+  /* ---------- 选关（蜿蜒地图，每章=1主题=5关） ---------- */
+  const GROUPS = LV.THEME_GROUPS;                       // 8 主题
+  const PER = 5;                                        // 每主题 5 关
+  // 5 个节点在 1280×720 viewBox 内的蛇形锚点
+  const NODEPTS = [[170, 560], [430, 300], [640, 545], [860, 285], [1120, 520]];
   let chapter = 0;
-  function showMenu() {
-    state = null; $('menu').style.display = 'flex'; $('popup').style.display = 'none'; $('overlay').style.display = 'none';
-    const ch = $('chapters'); ch.innerHTML = '';
-    [[0, '1-10'], [10, '11-20'], [20, '21-30'], [30, '31-40']].forEach(([base, lbl], i) => {
-      const d = document.createElement('div'); d.className = 'chap' + (chapter === i ? ' on' : ''); d.textContent = lbl;
-      d.onclick = () => { chapter = i; renderGrid(); ch.querySelectorAll('.chap').forEach((c, j) => c.className = 'chap' + (j === i ? ' on' : '')); }; ch.appendChild(d);
-    });
-    renderGrid();
-  }
-  function renderGrid() {
-    const p = prog(), grid = $('lvlGrid'); grid.innerHTML = '';
-    for (let k = 1; k <= 10; k++) {
-      const n = chapter * 10 + k, open = n <= p.cleared + 1, cleared = n <= p.cleared;
-      const theme = LV.THEME_GROUPS[Math.min(7, Math.floor((n - 1) / 5))];
-      const d = document.createElement('div'); d.className = 'lvl ' + (cleared ? 'cleared' : open ? 'open' : 'locked');
-      const badge = cleared ? '<img class="stimg" src="assets/ic_star.png" onerror="this.style.display=\'none\'">'
-        : open ? '' : '<img class="stimg" src="assets/ic_lock.png" onerror="this.style.display=\'none\'">';
-      d.innerHTML = `<div>${n}</div><div class="th">${THEME[theme]}</div><div class="st">${badge}</div>`;
-      if (open) d.onclick = () => startLevel(n); grid.appendChild(d);
+  function smoothPath(pts) {                            // 经过各点的平滑曲线
+    if (pts.length < 2) return '';
+    let d = `M ${pts[0][0]} ${pts[0][1]}`;
+    for (let i = 0; i < pts.length - 1; i++) {
+      const [x0, y0] = pts[i], [x1, y1] = pts[i + 1], mx = (x0 + x1) / 2;
+      d += ` C ${mx} ${y0} ${mx} ${y1} ${x1} ${y1}`;
     }
+    return d;
+  }
+  function showMenu() {
+    state = null; grade = ''; $('menu').style.display = 'flex';
+    $('popup').style.display = 'none'; $('overlay').style.display = 'none'; $('settings').style.display = 'none';
+    const p = prog(); chapter = Math.min(GROUPS.length - 1, Math.floor(Math.min(p.cleared, 39) / PER));   // 默认打开当前进度所在章
+    renderChapters(); renderChapter();
+  }
+  function renderChapters() {
+    const p = prog(), ch = $('chapters'); ch.innerHTML = '';
+    GROUPS.forEach((th, i) => {
+      const reached = i * PER + 1 <= p.cleared + 1;      // 该章首关是否已可达
+      const d = document.createElement('div');
+      d.className = 'chap' + (chapter === i ? ' on' : '') + (reached ? '' : ' lock');
+      d.textContent = (reached ? '' : '🔒 ') + THEME[th];
+      if (reached) d.onclick = () => { chapter = i; renderChapters(); renderChapter(); };
+      ch.appendChild(d);
+    });
+  }
+  function renderChapter() {
+    const p = prog(), th = GROUPS[chapter];
+    $('mapTitle').textContent = `第${'一二三四五六七八'[chapter]}章 · ${THEME[th]}`;
+    $('mapCleared').textContent = p.cleared;
+    $('mapArea').style.backgroundImage = `url(assets/b_${th}.png)`;
+    $('mapPath').setAttribute('d', smoothPath(NODEPTS));
+    const box = $('mapNodes'); box.innerHTML = '';
+    for (let k = 0; k < PER; k++) {
+      const n = chapter * PER + k + 1;
+      const cleared = n <= p.cleared, current = n === p.cleared + 1, locked = n > p.cleared + 1;
+      const [vX, vY] = NODEPTS[k];
+      const el = document.createElement('div');
+      el.className = 'node ' + (cleared ? 'cleared' : current ? 'current' : 'locked');
+      el.style.left = (vX / 1280 * 100) + '%'; el.style.top = (vY / 720 * 100) + '%';
+      let inner = '';
+      if (cleared) inner += `<div class="stars">${'<img src="assets/ic_star.png" onerror="this.style.display=\'none\'">'.repeat(3)}</div>`;
+      if (current) inner += `<div class="badge">当前</div>`;
+      const face = locked ? `<img class="lk" src="assets/ic_lock.png" onerror="this.textContent='🔒'">` : (n);
+      inner += `<div class="disc">${face}</div>`;
+      el.innerHTML = inner;
+      if (!locked) el.onclick = () => startLevel(n);
+      box.appendChild(el);
+    }
+    const cur = Math.min(40, p.cleared + 1);
+    const cta = $('mapCta'); cta.textContent = `进入 第 ${cur} 关 →`;
+    cta.onclick = () => startLevel(cur);
   }
   function startLevel(n) {
     level = LV.buildLevel(n); state = E.createState(level); anim = 0; speed = 1; $('speedNum').textContent = '1';
@@ -438,7 +474,7 @@
   cv.addEventListener('click', (e) => onTap(e.clientX, e.clientY));
   cv.addEventListener('touchstart', (e) => { const t = e.touches[0]; onTap(t.clientX, t.clientY); e.preventDefault(); }, { passive: false });
   $('startBtn').onclick = () => state && E.applyCommand(state, { type: 'startWave' });
-  $('menuBtn').onclick = showMenu;
+  $('menuBtn').onclick = openSettings;   // 游戏内 ☰ → 暂停/设置面板（面板内可返回选关）
   $('speedBtn').onclick = () => { speed = speed === 1 ? 2 : speed === 2 ? 3 : 1; $('speedNum').textContent = speed; };
   $('ovReplay').onclick = () => startLevel(level.id); $('ovNext').onclick = () => startLevel(Math.min(40, level.id + 1)); $('ovMenu').onclick = showMenu;
 
@@ -459,13 +495,53 @@
     cap = setTimeout(finish, 9000);   // 兜底：卡住/过长自动收尾
   }
 
+  /* ---------- 设置 / 暂停面板 ---------- */
+  const AKEY = 'wttl_audio';
+  const audio = (() => { try { return JSON.parse(localStorage.getItem(AKEY)) || { music: true, sfx: true }; } catch { return { music: true, sfx: true }; } })();
+  const saveAudio = () => localStorage.setItem(AKEY, JSON.stringify(audio));
+  let settingsBusy = false;
+  function paintToggles() { $('swMusic').className = 'sw' + (audio.music ? ' on' : ''); $('swSfx').className = 'sw' + (audio.sfx ? ' on' : ''); }
+  function openSettings() {
+    if (!state) return;
+    settingsBusy = true; paintToggles();
+    $('setSub').textContent = level.name;
+    $('settings').style.display = 'flex';
+  }
+  function closeSettings() { settingsBusy = false; $('settings').style.display = 'none'; }
+  $('swMusic').onclick = () => { audio.music = !audio.music; saveAudio(); paintToggles(); };
+  $('swSfx').onclick = () => { audio.sfx = !audio.sfx; saveAudio(); paintToggles(); };
+  $('setClose').onclick = closeSettings; $('setResume').onclick = closeSettings;
+  $('setReplay').onclick = () => { closeSettings(); startLevel(level.id); };
+  $('setHome').onclick = () => { closeSettings(); showMenu(); };
+
+  /* ---------- 启动加载页（等待页） ---------- */
+  function runLoading(then) {
+    const fill = $('ldFill'), pct = $('ldPct'), box = $('loading');
+    // 用主题草原背景衬底
+    box.style.backgroundImage = 'url(assets/b_grass.png)';
+    let v = 0; box.style.display = 'flex';
+    const tick = () => {
+      v = Math.min(100, v + 6 + Math.random() * 12);
+      fill.style.width = v + '%'; pct.textContent = Math.floor(v) + '%';
+      if (v < 100) setTimeout(tick, 130 + Math.random() * 120);
+      else setTimeout(() => { box.style.opacity = '0'; box.style.transition = 'opacity .45s'; setTimeout(() => { box.style.display = 'none'; then(); }, 460); }, 350);
+    };
+    tick();
+  }
+
   /* ---------- 主循环 ---------- */
   let last = 0;
-  function frame(t) { if (!last) last = t; let dt = (t - last) / 1000; last = t; if (dt > .05) dt = .05; dt *= speed; anim += dt; if (state && $('unlock').style.display !== 'flex' && !cutBusy) { E.update(state, dt); render(); syncHud(); } requestAnimationFrame(frame); }
+  function frame(t) { if (!last) last = t; let dt = (t - last) / 1000; last = t; if (dt > .05) dt = .05; dt *= speed; anim += dt; if (state && $('unlock').style.display !== 'flex' && !cutBusy && !settingsBusy) { E.update(state, dt); render(); syncHud(); } requestAnimationFrame(frame); }
   requestAnimationFrame(frame);
 
   const q = new URLSearchParams(location.search), pn = parseInt(q.get('play') || '0', 10);
-  if (pn >= 1) startLevel(pn); else showMenu();
+  if (pn >= 1) { $('loading').style.display = 'none'; startLevel(pn); }
+  else if (q.has('demo') || q.has('menudbg') || q.has('solo') || q.has('vfxtest') || q.has('setdbg')) { $('loading').style.display = 'none'; showMenu(); }
+  else runLoading(showMenu);   // 正常进入：先播加载页，再进选关
+  if (q.has('setdbg')) setTimeout(() => {   // 截图调试：进第1关并打开设置面板
+    startLevel(1);
+    setTimeout(() => { $('cut').style.display = 'none'; cutBusy = false; unlockQ = []; $('unlock').style.display = 'none'; openSettings(); }, 400);
+  }, 200);
   if (q.has('menudbg')) setTimeout(() => {   // 截图调试：展示就地环形菜单
     if (!state) return;
     unlockQ = []; $('unlock').style.display = 'none';
