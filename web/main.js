@@ -157,7 +157,7 @@
   function hideScreens() { for (const id of ['menu', 'home', 'shop', 'codex', 'settings', 'overlay', 'popup']) $(id).style.display = 'none'; }
   function showHome() {
     state = null; grade = ''; hideScreens();
-    $('home').style.display = 'block'; $('home').style.backgroundImage = 'url(assets/b_grass.png)';
+    $('home').style.display = 'block'; $('home').style.backgroundImage = 'url(assets/bg_home.png)';
     const p = prog(); $('hContSub').textContent = '上次进度 · 第 ' + Math.min(40, p.cleared + 1) + ' 关';
     $('homeGems').textContent = gems();
   }
