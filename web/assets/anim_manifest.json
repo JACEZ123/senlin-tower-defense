@@ -1,1 +1,66 @@
-{}
+{
+  "idle_arrow": {
+    "asset": "tw_arrow_3",
+    "frames": 16
+  },
+  "atk_arrow": {
+    "asset": "tw_arrow_atk",
+    "frames": 16
+  },
+  "idle_cannon": {
+    "asset": "tw_cannon_3",
+    "frames": 16
+  },
+  "atk_cannon": {
+    "asset": "tw_cannon_atk",
+    "frames": 16
+  },
+  "idle_frost": {
+    "asset": "tw_frost_3",
+    "frames": 16
+  },
+  "atk_frost": {
+    "asset": "tw_frost_atk",
+    "frames": 16
+  },
+  "idle_poison": {
+    "asset": "tw_poison_3",
+    "frames": 16
+  },
+  "atk_poison": {
+    "asset": "tw_poison_atk",
+    "frames": 16
+  },
+  "idle_lightning": {
+    "asset": "tw_lightning_3",
+    "frames": 16
+  },
+  "atk_lightning": {
+    "asset": "tw_lightning_atk",
+    "frames": 16
+  },
+  "idle_sniper": {
+    "asset": "tw_sniper_3",
+    "frames": 16
+  },
+  "atk_sniper": {
+    "asset": "tw_sniper_atk",
+    "frames": 16
+  },
+  "idle_flame": {
+    "asset": "tw_flame_3",
+    "frames": 16
+  },
+  "atk_flame": {
+    "asset": "tw_flame_atk",
+    "frames": 16
+  },
+  "idle_arcane": {
+    "asset": "tw_arcane_3",
+    "frames": 16
+  },
+  "atk_arcane": {
+    "asset": "tw_arcane_atk",
+    "frames": 16
+  }
+}
