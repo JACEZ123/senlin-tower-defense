@@ -110,9 +110,9 @@
   #mapTop .mtitle { color: #ffe066; font-size: 22px; font-weight: 900; text-shadow: 0 2px 0 #7a3e12; -webkit-text-stroke: 1px #7a3e12; }
   #mapTop .mprog { display: flex; align-items: center; gap: 6px; padding: 5px 14px; border-radius: 999px; background: rgba(20,28,20,.74); border: 2px solid rgba(255,200,90,.55); color: #ffe9a8; font-size: 14px; font-weight: 800; }
   #chapters { display: flex; gap: 8px; position: absolute; top: 60px; left: 0; right: 0; z-index: 3; justify-content: center; flex-wrap: wrap; padding: 0 12px; margin: 0; }
-  .chap { padding: 7px 14px; border-radius: 14px; font-weight: 800; font-size: 13px; cursor: pointer; color: #e6d5c0; background: rgba(20,28,20,.72); border: 2px solid rgba(255,200,90,.35); white-space: nowrap; }
-  .chap.on { background: linear-gradient(#ffd868,#f0a521); border-color: #b9742a; color: #5a3410; box-shadow: 0 3px 0 #9c5f1f; }
-  .chap.lock { opacity: .6; color: #9aa6b0; cursor: not-allowed; }
+  .chap { padding: 9px 16px; font-weight: 800; font-size: 13px; cursor: pointer; color: #6a4418; background-image: url(assets/ui_btn_wood.png); background-size: 100% 100%; background-repeat: no-repeat; border: none; white-space: nowrap; filter: drop-shadow(0 3px 4px rgba(0,0,0,.3)); }
+  .chap.on { background-image: url(assets/ui_btn_gold.png); color: #5a3410; }
+  .chap.lock { opacity: .55; filter: grayscale(.5); cursor: not-allowed; }
   #mapArea { position: absolute; inset: 0; z-index: 1; background: #1b3a24 center/cover no-repeat; }
   #mapArea::after { content:""; position:absolute; inset:0; background: linear-gradient(180deg,rgba(8,20,12,.5),rgba(8,20,12,.15) 35%,rgba(8,20,12,.45)); }
   #mapSvg { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 2; }
@@ -127,7 +127,7 @@
   .node .badge { position: absolute; top: -26px; left: 50%; transform: translateX(-50%); padding: 2px 9px; border-radius: 8px; background: #3fae2a; border: 2px solid #eaffcf; color: #fff; font-size: 10px; font-weight: 900; white-space: nowrap; box-shadow: 0 2px 5px rgba(0,0,0,.35); }
   .node .lk { width: 30px; height: 30px; object-fit: contain; }
   #mapCta { position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); z-index: 3; padding: 11px 34px; border-radius: 18px; background: linear-gradient(#ffd868,#f2a531); border: 3px solid #b9742a; box-shadow: 0 5px 0 #9c5f1f,0 9px 16px rgba(0,0,0,.35); color: #5a3410; font-size: 20px; font-weight: 900; cursor: pointer; }
-  #mapBack { position: absolute; left: 16px; bottom: 18px; z-index: 3; width: 44px; height: 44px; border-radius: 14px; background: rgba(20,28,20,.74); border: 2px solid rgba(255,200,90,.55); color: #ffe9a8; font-size: 22px; display: grid; place-items: center; cursor: pointer; }
+  #mapBack { position: absolute; left: 16px; bottom: 18px; z-index: 3; width: 48px; height: 48px; background: url(assets/ic_back.png) center/contain no-repeat; border: none; color: transparent; font-size: 0; cursor: pointer; filter: drop-shadow(0 3px 4px rgba(0,0,0,.45)); }
 
   /* ===== 设置 / 暂停面板 ===== */
   #settings { position: absolute; inset: 0; z-index: 45; display: none; align-items: center; justify-content: center; background: rgba(6,14,9,.62); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
@@ -159,18 +159,19 @@
   .hleft .htag { padding: 5px 14px; border-radius: 999px; background: rgba(20,28,20,.55); border: 1px solid rgba(255,200,90,.4); font-size: 13px; color: #ffe9a8; font-weight: 700; }
   .hleft .hmascot { display: none; }
   .hright { display: flex; flex-direction: column; gap: 14px; width: 300px; }
-  .hbtn { border-radius: 20px; text-align: center; cursor: pointer; color: #5a3410; font-weight: 900; }
-  .hbtn.hstart { padding: 16px; font-size: 28px; background: linear-gradient(#ffd868,#f2a531); border: 3px solid #b9742a; box-shadow: 0 6px 0 #9c5f1f,0 11px 18px rgba(0,0,0,.35); }
-  .hbtn.hcont { padding: 12px; font-size: 22px; color: #234d0f; background: linear-gradient(#a6e05a,#5fae2a); border: 3px solid #3d7a1c; box-shadow: 0 6px 0 #2f5f16,0 11px 18px rgba(0,0,0,.3); }
-  .hbtn.hcont .hsub { font-size: 12px; color: #2f5f16; font-weight: 800; margin-top: 2px; }
-  .hbtn.hlevels { padding: 12px; font-size: 22px; color: #0d3b5e; background: linear-gradient(#7ad4f7,#2f8fd0); border: 3px solid #1e6aa8; box-shadow: 0 6px 0 #14507f,0 11px 18px rgba(0,0,0,.3); }
+  .hbtn { text-align: center; cursor: pointer; font-weight: 900; background-size: 100% 100%; background-repeat: no-repeat; filter: drop-shadow(0 5px 6px rgba(0,0,0,.35)); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .hbtn.hstart { padding: 24px 16px; font-size: 28px; color: #5a3410; background-image: url(assets/ui_btn_gold.png); }
+  .hbtn.hcont { padding: 20px 12px; font-size: 22px; color: #1e4d12; background-image: url(assets/ui_btn_green.png); }
+  .hbtn.hcont .hsub { font-size: 12px; color: #235016; font-weight: 800; margin-top: 2px; }
+  .hbtn.hlevels { padding: 20px 12px; font-size: 22px; color: #0b3350; background-image: url(assets/ui_btn_blue.png); }
   .hrow3 { display: flex; gap: 10px; }
-  .hmini { flex: 1; padding: 10px 0; border-radius: 14px; text-align: center; font-size: 15px; font-weight: 800; color: #ffe9a8; background: rgba(20,28,20,.7); border: 2px solid rgba(255,200,90,.5); cursor: pointer; }
+  .hmini { flex: 1; padding: 8px 0 6px; text-align: center; font-size: 14px; font-weight: 800; color: #4a2b08; background: url(assets/ui_btn_wood.png) center/100% 100% no-repeat; cursor: pointer; filter: drop-shadow(0 4px 5px rgba(0,0,0,.3)); display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .hmini img { width: 26px; height: 26px; object-fit: contain; }
 
   /* ===== 通用二级页（商店/图鉴） ===== */
   .page { position: absolute; inset: 0; z-index: 43; display: none; background: radial-gradient(120% 100% at 50% 0%,#2f5233,#1c3320 58%,#112417); }
   .pgbar { position: absolute; top: 0; left: 0; right: 0; height: 56px; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; z-index: 2; }
-  .pgback { width: 40px; height: 40px; border-radius: 14px; background: rgba(10,18,10,.6); border: 2px solid rgba(255,200,90,.5); color: #ffe9a8; font-size: 22px; display: grid; place-items: center; cursor: pointer; }
+  .pgback { width: 46px; height: 46px; background: url(assets/ic_back.png) center/contain no-repeat; border: none; color: transparent; font-size: 0; cursor: pointer; filter: drop-shadow(0 3px 4px rgba(0,0,0,.4)); }
   .pgtitle { position: absolute; left: 0; right: 0; text-align: center; color: #ffe066; font-size: 24px; font-weight: 900; -webkit-text-stroke: 1.5px #7a3e12; text-shadow: 0 2px 0 #7a3e12; pointer-events: none; }
   .pgbody { position: absolute; inset: 62px 20px 18px; display: flex; gap: 16px; }
 
@@ -180,7 +181,9 @@
   .shopPreview .sptitle { font-size: 24px; color: #ffe066; }
   .shopPreview .spimg { width: 170px; height: 160px; object-fit: contain; filter: drop-shadow(0 0 26px rgba(176,140,255,.35)); }
   .shopPreview .spdesc { font-size: 12px; color: #cfe0d0; font-weight: 600; text-align: center; line-height: 1.5; }
-  .shopPreview .spbuy { margin-top: auto; width: 100%; padding: 13px; border-radius: 16px; background: linear-gradient(#ffd868,#f0a521); border: 3px solid #b9742a; box-shadow: 0 5px 0 #9c5f1f; text-align: center; color: #5a3410; font-size: 20px; font-weight: 900; cursor: pointer; }
+  .shopPreview .spbuy { margin-top: auto; width: 100%; padding: 17px 13px; background-image: url(assets/ui_btn_gold.png); background-size: 100% 100%; background-repeat: no-repeat; border: none; text-align: center; color: #5a3410; font-size: 20px; font-weight: 900; cursor: pointer; filter: drop-shadow(0 4px 5px rgba(0,0,0,.3)); }
+  .shopPreview .spbuy.e { background-image: url(assets/ui_btn_green.png); color: #1e4d12; }
+  .shopPreview .spbuy.q { background-image: url(assets/ui_btn_blue.png); color: #0b3350; }
   .shopRight { flex: 1; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
   .shopChars { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; }
   .shopChar { flex: 0 0 auto; width: 52px; height: 52px; border-radius: 14px; background: rgba(10,18,10,.55); border: 2px solid rgba(255,200,90,.3); display: grid; place-items: center; cursor: pointer; }
@@ -214,8 +217,8 @@
   .dexDetail .dxdesc { font-size: 12px; color: #b9cbb6; font-weight: 600; text-align: center; line-height: 1.55; }
   .dexRight { flex: 1; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
   .dexTabs { display: flex; gap: 8px; }
-  .dxtab { padding: 8px 16px; border-radius: 13px; font-size: 13px; font-weight: 900; cursor: pointer; background: rgba(10,18,10,.55); border: 2px solid rgba(255,200,90,.35); color: #cfe0d0; }
-  .dxtab.on { background: linear-gradient(#ffd868,#f0a521); border-color: #b9742a; color: #5a3410; box-shadow: 0 3px 0 #9c5f1f; }
+  .dxtab { padding: 10px 20px; font-size: 13px; font-weight: 900; cursor: pointer; background-image: url(assets/ui_btn_wood.png); background-size: 100% 100%; background-repeat: no-repeat; border: none; color: #6a4418; filter: drop-shadow(0 3px 4px rgba(0,0,0,.3)); }
+  .dxtab.on { background-image: url(assets/ui_btn_gold.png); color: #5a3410; }
   .dexGrid { flex: 1; display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; align-content: start; overflow-y: auto; }
   .dexcell { display: flex; flex-direction: column; align-items: center; gap: 5px; cursor: pointer; }
   .dexcell .dc { width: 62px; height: 62px; border-radius: 18px; background: rgba(10,18,10,.5); border: 2px solid rgba(255,255,255,.18); display: grid; place-items: center; overflow: hidden; }
@@ -346,7 +349,7 @@
         <div class="hbtn hstart" id="hStart">开始游戏</div>
         <div class="hbtn hcont" id="hCont">继续冒险<div class="hsub" id="hContSub">上次进度 · 第 1 关</div></div>
         <div class="hbtn hlevels" id="hLevels">关卡选择</div>
-        <div class="hrow3"><div class="hmini" id="hCodex">图鉴</div><div class="hmini" id="hShop">商店</div><div class="hmini" id="hSet">设置</div></div>
+        <div class="hrow3"><div class="hmini" id="hCodex"><img src="assets/ic_codex.png" onerror="this.style.display='none'">图鉴</div><div class="hmini" id="hShop"><img src="assets/ic_shop.png" onerror="this.style.display='none'">商店</div><div class="hmini" id="hSet"><img src="assets/ic_gear.png" onerror="this.style.display='none'">设置</div></div>
       </div>
     </div>
   </div>

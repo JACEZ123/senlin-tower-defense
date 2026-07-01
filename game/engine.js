@@ -56,6 +56,7 @@ function applyCommand(s, cmd) {
     case 'select':    s.selectedId = cmd.id || 0; return true;
     case 'focus':     s.focusId = (s.focusId === cmd.id) ? 0 : cmd.id; return true;  // 点怪集火/再点取消
     case 'placeChest':return placeChest(s, cmd.x, cmd.y, cmd.item);
+    case 'collectChest':return collectChest(s, cmd.id);
   }
   return false;
 }
@@ -147,6 +148,14 @@ function placeChest(s, x, y, item) {
   s.chests.push(c);
   applyChestInstant(s, c);   // 即时类效果立刻结算
   return true;
+}
+// 拾取金币堆：加当前金币的 pct%，然后宝箱消失
+function collectChest(s, id) {
+  const i = s.chests.findIndex((c) => c.id === id); if (i < 0) return false;
+  const c = s.chests[i]; if (c.item.effect !== 'goldpile') return false;
+  const g = Math.max(1, Math.floor(s.gold * (c.item.pct || 0.25)));
+  s.gold += g; pushFloat(s, c.x, c.y - 6, '+' + g, '#ffd23f');
+  s.chests.splice(i, 1); return true;
 }
 function applyChestInstant(s, c) {
   const it = c.item;

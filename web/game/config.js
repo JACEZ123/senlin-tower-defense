@@ -130,7 +130,7 @@ const ENEMIES = {
  *           net(周期困住濒死怪) / haste(相邻塔攻速光环) / burst(周期真伤爆发)
  *   rarity: common/rare/epic 决定抽中权重 CHEST_RARITY_WEIGHT。img=chest_<id>. */
 const CHEST_ITEMS = [
-  { id: 'gold',    name: '金币宝箱', rarity: 'common', effect: 'gold',    amount: 90,            img: 'chest_gold',   desc: '立即获得 90 金币' },
+  { id: 'gold',    name: '金币宝箱', rarity: 'common', effect: 'goldpile', pct: 0.25,             img: 'chest_gold',   desc: '地上出现金币堆，点击拾取当前金币的 25%' },
   { id: 'income',  name: '补给宝箱', rarity: 'common', effect: 'income',  rate: 1,               img: 'chest_income', desc: '每秒 +1 金币（整局）' },
   { id: 'expbook', name: '经验之书', rarity: 'common', effect: 'expbook', radius: 150,           img: 'chest_exp',    desc: '相邻一座塔立即免费升 1 级' },
   { id: 'net',     name: '捕网宝箱', rarity: 'rare',   effect: 'net',     period: 15, dur: 3, range: 280, img: 'chest_net', desc: '每 15s 困住范围内最濒死的怪 3s' },

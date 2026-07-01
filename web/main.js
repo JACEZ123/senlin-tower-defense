@@ -246,13 +246,13 @@
       ? `<img class="spimg" src="${gif}" onerror="this.onerror=null;this.src='${still}'">`
       : `<img class="spimg" src="${still}" onerror="this.src='assets/tw_${k}_1.png'">`;
     let btn;
-    if (equipped) btn = `<div class="spbuy" style="background:#3fae2a;color:#fff">已装备</div>`;
-    else if (owned) btn = `<div class="spbuy" id="spEquip" style="background:linear-gradient(#7ad4f7,#2f8fd0);color:#08324f">装备</div>`;
-    else btn = `<div class="spbuy" id="spBuy"><img src="assets/ic_gem.png" onerror="this.style.display='none'" style="width:18px;height:18px;vertical-align:-3px"> ${s.gem} · 购买</div>`;
+    if (equipped) btn = `<div class="spbuy e">已装备</div>`;
+    else if (owned) btn = `<div class="spbuy q" id="spEquip">装备</div>`;
+    else btn = `<div class="spbuy g" id="spBuy"><img src="assets/ic_gem.png" onerror="this.style.display='none'" style="width:18px;height:18px;vertical-align:-3px"> ${s.gem} · 购买</div>`;
     $('shopPreview').innerHTML =
       `<div class="spname">${d.name} · 皮肤</div><div class="sptitle">${s.name}</div>` +
       previewImg +
-      `<div class="spdesc">${ATKDESC[d.attack] || ''} · 仅改变外观，属性不变<br>${id === 'default' ? '守卫默认外观' : '含专属待机 / 攻击动画'}</div>` +
+      `<div class="spdesc">${ATKDESC[d.attack] || ''} · 仅改变外观，属性不变<br>${id === 'default' ? '守卫默认外观' : '专属待机/攻击动画 · <b style="color:#ffe27a">升到终极形态后生效</b>'}</div>` +
       btn;
     const buy = $('spBuy'); if (buy) buy.onclick = () => {
       if (gems() < s.gem) { buy.textContent = '钻石不足'; return; }
@@ -510,13 +510,28 @@
     if (menu && menu.mode === 'build') { ctx.beginPath(); ctx.arc(vx(menu.x), vy(menu.y), vk(10), 0, 7); ctx.fillStyle = 'rgba(255,235,140,.5)'; ctx.fill(); }
     // 选中塔射程
     if (s.selectedId) { const t = s.towers.find((x) => x.id === s.selectedId); if (t) { const st = E.towerStats(t); ctx.beginPath(); ctx.arc(vx(t.x), vy(t.y), vk(st.range), 0, 7); ctx.fillStyle = 'rgba(120,200,255,.12)'; ctx.fill(); ctx.strokeStyle = 'rgba(120,200,255,.5)'; ctx.lineWidth = vk(2); ctx.stroke(); } }
+    // 新手引导：把引导建造点画成"发光建造台"(虚线框+加号+脉冲金光)，让位置醒目
+    if (tut.active && tut.buildSpot && tut.steps[tut.step] && tut.steps[tut.step].wait === 'build') {
+      const bx = vx(tut.buildSpot.x), by = vy(tut.buildSpot.y), pl = 0.5 + 0.5 * Math.sin(anim * 4);
+      ctx.save();
+      ctx.globalAlpha = 0.55 + 0.4 * pl;
+      const g = ctx.createRadialGradient(bx, by, vk(4), bx, by, vk(48));
+      g.addColorStop(0, 'rgba(255,242,180,.95)'); g.addColorStop(1, 'rgba(255,220,120,0)');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(bx, by, vk(48), 0, 7); ctx.fill();
+      ctx.globalAlpha = 1; ctx.strokeStyle = '#ffe27a'; ctx.lineWidth = vk(3); ctx.setLineDash([vk(8), vk(5)]);
+      ctx.strokeRect(bx - vk(27), by - vk(27), vk(54), vk(54)); ctx.setLineDash([]);
+      ctx.lineWidth = vk(4.5); ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(bx - vk(12), by); ctx.lineTo(bx + vk(12), by); ctx.moveTo(bx, by - vk(12)); ctx.lineTo(bx, by + vk(12)); ctx.stroke();
+      ctx.restore();
+    }
     // 宝箱（可放置道具）：光环/范围提示 + 箱体 + 顶部道具图标浮动
     for (const c of s.chests) {
       const it = c.item;
       if (it.effect === 'haste') { ctx.save(); ctx.globalAlpha = 0.14 + 0.06 * (0.5 + 0.5 * Math.sin(anim * 3)); ctx.beginPath(); ctx.arc(vx(c.x), vy(c.y), vk(it.radius), 0, 7); ctx.fillStyle = '#7CFC4D'; ctx.fill(); ctx.strokeStyle = 'rgba(124,252,77,.5)'; ctx.lineWidth = vk(2); ctx.stroke(); ctx.restore(); }
       else if (it.effect === 'burst' || it.effect === 'net') { ctx.save(); ctx.globalAlpha = 0.10; ctx.beginPath(); ctx.arc(vx(c.x), vy(c.y), vk(it.range), 0, 7); ctx.fillStyle = it.effect === 'burst' ? '#c77dff' : '#8fe3c8'; ctx.fill(); ctx.restore(); }
+      const isPile = it.effect === 'goldpile';
+      if (isPile) { const pl = 0.5 + 0.5 * Math.sin(anim * 3.5); ctx.save(); ctx.globalAlpha = 0.35 + 0.4 * pl; const g = ctx.createRadialGradient(vx(c.x), vy(c.y), vk(3), vx(c.x), vy(c.y), vk(40)); g.addColorStop(0, 'rgba(255,232,120,.95)'); g.addColorStop(1, 'rgba(255,210,80,0)'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(vx(c.x), vy(c.y), vk(40), 0, 7); ctx.fill(); ctx.restore(); }
       shadow(c.x, c.y, 18);
-      const cbob = Math.sin(anim * 2.4 + c.id) * 2;
+      const cbob = isPile ? Math.abs(Math.sin(anim * 3.5)) * 4 : Math.sin(anim * 2.4 + c.id) * 2;   // 金币堆跳动提示可点击
       drawSprite(it.img || 'chest_closed', c.x, c.y + 2 + cbob, 62, 0.72);
     }
     // 塔
@@ -534,9 +549,10 @@
       // 避免低级塔开火时错误显示成高级形象（#3 修复）
       const atk = ATK[t.key], tsf = st.rate - t.cd, ATKDUR = 0.42, isMax = t.branch || t.level >= 2, firing = tsf >= 0 && tsf < ATKDUR;
       const sid = equippedSkin(t.key), skIdle = sid && `skidle_${t.key}_${sid}`, skAtk = sid && `skatk_${t.key}_${sid}`;
-      if (sid && IMG[skAtk] && firing) {                                    // 皮肤攻击动画
+      // 皮肤=终极形态外观：仅当塔升到最高级/进化(isMax)才生效；1/2 级仍用各自进阶形象
+      if (sid && isMax && IMG[skAtk] && firing) {                            // 皮肤攻击动画
         drawSprite(skAtk, t.x, t.y + 4, 80, 0.78, { frame: Math.floor((tsf / ATKDUR) * 16) });
-      } else if (sid && IMG[skIdle]) {                                       // 皮肤待机动画(各等级同一皮肤外观)
+      } else if (sid && isMax && IMG[skIdle]) {                              // 皮肤待机动画
         drawSprite(skIdle, t.x, t.y + 4 + bob, 78 * punch, 0.78);
       } else if (atk && isMax && firing) {                                   // 默认攻击动画(仅3级/分支)
         drawSprite(atk.asset, t.x, t.y + 4, 80, 0.78, { frame: Math.floor((tsf / ATKDUR) * atk.frames) });
@@ -703,13 +719,14 @@
     $('tutTxt').textContent = st.text;
     $('tutNext').style.display = st.wait ? 'none' : 'block';
     const hole = $('tutHole'), hand = $('tutHand'), mask = $('tutMask');
-    mask.style.display = 'block';   // 整屏变暗(点击穿透)，聚焦引导
-    if (st.target) {   // 有目标：聚光灯圆环 + 手指高亮
+    mask.style.display = 'block';
+    if (st.target) {   // 有目标：真·聚光灯——目标处不变暗(镂空)，四周压暗 + 金环 + 手指
       const p = st.target(), r = st.holeR || 44;
+      mask.style.background = `radial-gradient(circle at ${p.x}px ${p.y}px, rgba(4,10,6,0) ${r - 6}px, rgba(4,10,6,.66) ${r + 46}px)`;
       hole.style.display = 'block'; hole.style.width = hole.style.height = (r * 2) + 'px';
       hole.style.left = (p.x - r) + 'px'; hole.style.top = (p.y - r) + 'px';
       if (st.hand) { hand.style.display = 'block'; hand.style.left = (p.x + r * 0.4) + 'px'; hand.style.top = (p.y + r * 0.4) + 'px'; } else hand.style.display = 'none';
-    } else { hole.style.display = 'none'; hand.style.display = 'none'; }
+    } else { mask.style.background = 'rgba(4,10,6,.62)'; hole.style.display = 'none'; hand.style.display = 'none'; }   // 无目标：整屏均匀变暗
   }
   function tutAdvance() {
     const cur = tut.steps[tut.step];
@@ -741,6 +758,9 @@
       for (let i = 0; i < menu.items.length; i++) { const p = menuItemPos(i); if (Math.hypot(v.x - p.x, v.y - p.y) < ICON + 6) { if (menu.items[i].enabled) menu.items[i].act(); return; } }
       closeMenu(); return;
     }
+    // 点金币堆 → 拾取(加当前金币25%，堆消失)
+    let gp = null, gpb = 52; for (const c of state.chests) { if (c.item.effect !== 'goldpile') continue; const dd = Math.hypot(v.x - c.x, v.y - c.y); if (dd < gpb) { gpb = dd; gp = c; } }
+    if (gp) { E.applyCommand(state, { type: 'collectChest', id: gp.id }); return; }
     // 点已有塔 → 管理菜单
     let t = null, tb = 46; for (const x of state.towers) { const dd = Math.hypot(v.x - x.x, v.y - x.y); if (dd < tb) { tb = dd; t = x; } }
     if (t) { openManage(t); return; }
@@ -833,11 +853,15 @@
   requestAnimationFrame(frame);
 
   const q = new URLSearchParams(location.search), pn = parseInt(q.get('play') || '0', 10);
+  // 调试充值：?gems=99999 / ?chests=99（写入 localStorage，之后正常浏览保留）
+  if (q.get('gems') != null) setGems(parseInt(q.get('gems'), 10) || 0);
+  if (q.get('chests') != null) setChestStock(parseInt(q.get('chests'), 10) || 0);
   if (pn >= 1) { $('loading').style.display = 'none'; startLevel(pn); }
   else if (q.has('shopdbg')) { $('loading').style.display = 'none'; showShop(); }
   else if (q.has('dexdbg')) { $('loading').style.display = 'none'; showCodex(); const tb = q.get('dexdbg'); if (tb === 'mob' || tb === 'boss') { dexTab = tb; dexSel = 0; renderCodex(); } }
   else if (q.has('homedbg')) { $('loading').style.display = 'none'; showHome(); }
-  else if (q.has('chestdbg') || q.has('tutdbg')) { $('loading').style.display = 'none'; startLevel(1); }
+  else if (q.has('chestdbg') || q.has('tutdbg') || q.has('bossdbg')) { $('loading').style.display = 'none'; startLevel(1); }
+  else if (q.has('skindbg')) { const [key, id] = (q.get('skindbg') || 'arrow:royal').split(':'); const d = skinData(); d.owned[`${key}_${id}`] = true; d.equip[key] = id; saveSkins(d); $('loading').style.display = 'none'; startLevel(1); }
   else if (q.has('demo') || q.has('menudbg') || q.has('solo') || q.has('vfxtest') || q.has('setdbg')) { $('loading').style.display = 'none'; showMenu(); }
   else runLoading(showHome);   // 正常进入：先播加载页，再进首页
   if (q.has('setdbg')) setTimeout(() => {   // 截图调试：进第1关并打开设置面板
@@ -899,6 +923,17 @@
   if (q.has('tutdbg')) {   // 截图调试：强制第1关新手引导
     localStorage.removeItem(TUTKEY);
     setTimeout(() => { $('banner').style.display = 'none'; cutBusy = false; unlockQ = []; $('unlock').style.display = 'none'; tutStart(1); const step = parseInt(q.get('tutdbg'), 10); if (step > 0) { tut.step = Math.min(tut.steps.length - 1, step); renderTutStep(); } }, 2100);
+  }
+  if (q.has('skindbg')) {   // 截图调试：装备皮肤后游戏内是否换装
+    setTimeout(() => {
+      $('banner').style.display = 'none'; cutBusy = false; unlockQ = []; $('unlock').style.display = 'none'; tut.active = false; $('tut').style.display = 'none';
+      const key = (q.get('skindbg') || 'arrow:royal').split(':')[0];
+      if (!level.towers.includes(key)) level.towers = [...new Set([...level.towers, key])];
+      ensureSkinSheets(key); state.gold = 99999;
+      outer: for (let yy = 120; yy < C.VH - 90; yy += 14) for (let xx = 130; xx < C.VW - 130; xx += 14) {
+        if (E.canBuild(state, xx, yy).ok && E.applyCommand(state, { type: 'build', x: xx, y: yy, tower: key })) { const t = state.towers[state.towers.length - 1]; E.applyCommand(state, { type: 'upgrade', id: t.id }); E.applyCommand(state, { type: 'upgrade', id: t.id }); E.applyCommand(state, { type: 'select', id: 0 }); break outer; }
+      }
+    }, 500);
   }
   if (q.has('bossdbg')) {   // 截图调试：Boss 来袭横幅 + 红色警报
     setTimeout(() => { $('unlock').style.display = 'none'; unlockQ = []; tut.active = false; $('tut').style.display = 'none'; playCut('cut_boss_' + level.theme, 'Boss 即将出现', null); bossAlarm(); }, 500);
