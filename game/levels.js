@@ -79,9 +79,11 @@ function genSlots(path, level) {
   return chosen.slice(0, cap);
 }
 
-/* ----- 波次组配 -----
- * 主力(bulk)只从「基础怪」里选(可被便宜塔清理)；「重型/治疗」只作少量点缀；
- * 里程碑关(每 5 关 + 第40关)最后一波出 Boss。难度随关卡/波数递增。 */
+/* ----- 波次组配（每关固定 10 波，第 10 波出 Boss）-----
+ * 节奏曲线：前 3 波「慢速·低金·大量」小怪（新手缓冲）；中段(4-6)提量；
+ *          后段(7-9)加入重型/治疗且提速提质；第 10 波末尾出 Boss。 */
+const WAVES = 10;              // 每关波数固定为 10
+const EARLY = 3;               // 前 3 波为「慢速低金高量」缓冲段
 const BASIC = ['slime', 'runner', 'swarm', 'bouncer', 'stinger', 'flyer', 'warrunner', 'splitter', 'swarmer', 'ghost'];
 const HEAVY = ['tank', 'ironbug', 'healer', 'brute', 'juggernaut'];
 function unlockedOf(list, level) { return list.filter((k) => C.ENEMIES[k] && (C.ENEMIES[k].unlock || 1) <= level); }
@@ -96,30 +98,36 @@ function buildWave(level, w, waveCount) {
   const basics = unlockedOf(BASIC, level), heavies = unlockedOf(HEAVY, level);
   const list = [];
   const push = (type, n, gap) => { for (let i = 0; i < n; i++) list.push({ type, gap }); };
-  // 主力数量随波数增长；"更多怪"主要靠更多怪种 + 每关 boss + 适度提量承载（避免开局即崩）
+  const early = w <= EARLY;
+  // 主力数量：前期就给大量小怪（走得慢、给钱少，用数量施压但不致崩）；后期随波数提量
   const main = basics[(w + level) % basics.length] || 'slime';
-  push(main, 5 + Math.round(w * 1.15), 0.5);
-  if (basics.length > 1) { const alt = basics[(w + level + 2) % basics.length]; push(alt, 1 + Math.floor(w / 3), 0.44); }
-  if (basics.length > 3 && w >= 3) { const alt2 = basics[(w + level + 5) % basics.length]; push(alt2, 1 + Math.floor(w / 4), 0.42); }
-  if (heavies.length) { const hv = heavies[(w + level) % heavies.length]; push(hv, Math.floor(w / 4) + (w >= waveCount - 1 ? 1 : 0), 0.85); }
-  // 虫群洪流：每隔几波来一大波廉价小怪
+  const mainN = early ? (9 + w * 2) : (6 + Math.round((w - EARLY) * 1.9));
+  push(main, mainN, early ? 0.4 : 0.5);
+  if (basics.length > 1) { const alt = basics[(w + level + 2) % basics.length]; push(alt, (early ? 2 : 1) + Math.floor(w / 3), 0.42); }
+  if (basics.length > 3 && w >= 4) { const alt2 = basics[(w + level + 5) % basics.length]; push(alt2, 1 + Math.floor((w - 3) / 2), 0.4); }
+  // 重型/治疗（质量）：仅后半段(第4波起)登场，越靠后越多
+  if (heavies.length && w >= 4) { const hv = heavies[(w + level) % heavies.length]; push(hv, Math.floor((w - 3) / 2) + (w >= waveCount - 1 ? 1 : 0), 0.85); }
+  // 虫潮洪流：每隔几波一大波廉价小怪
   const swk = basics.includes('swarmer') ? 'swarmer' : (basics.includes('swarm') ? 'swarm' : null);
   if (swk && w % 3 === 0) push(swk, 6 + w, 0.18);
-  // Boss：每关「最后一波」末尾出一个 boss（每关都有 boss）；里程碑关(每5关/第40关)再加一只前置 boss
-  if (w === waveCount) list.push({ type: pickBoss(level), gap: 1.5, boss: true });
-  else if ((level % 5 === 0 || level === 40) && w === Math.floor(waveCount * 0.6)) list.push({ type: pickBoss(level), gap: 1.5, boss: true });
-  // 强度：血量随关卡/波次爬升，速度随关卡略升
-  const hpMul = (1 + (level - 1) * 0.05) * (1 + (w - 1) * 0.04);
-  const spMul = 1 + Math.min(0.45, (level - 1) * 0.009);
-  return list.map((e) => e.boss ? { type: e.type, gap: e.gap, hpMul: bossHpMul(level), spMul } : { type: e.type, gap: e.gap, hpMul, spMul });
+  // Boss：固定第 10 波（末波）末尾登场
+  if (w === waveCount) list.push({ type: pickBoss(level), gap: 1.6, boss: true });
+  // 强度：血量随关卡/波次爬升；速度前期慢、后期加速
+  const hpMul = (1 + (level - 1) * 0.05) * (1 + (w - 1) * 0.05);
+  const baseSp = 1 + Math.min(0.45, (level - 1) * 0.009);
+  const waveSp = early ? 0.7 : (w <= 5 ? 0.92 : 1 + Math.min(0.28, (w - 5) * 0.055));   // 前期慢，后期越来越快
+  const spMul = baseSp * waveSp;
+  const goldMul = early ? 0.55 : 1;   // 前期怪给钱少
+  return list.map((e) => e.boss
+    ? { type: e.type, gap: e.gap, hpMul: bossHpMul(level), spMul: baseSp, goldMul: 1, boss: true }
+    : { type: e.type, gap: e.gap, hpMul, spMul, goldMul });
 }
 
-// 下一波预览：主力怪名称 + 是否 Boss 波
+// 下一波预览：主力怪名称 + 是否 Boss 波（Boss 固定第 10 波）
 function wavePreview(level, w, waveCount) {
   if (w > waveCount) return null;
   const basics = unlockedOf(BASIC, level);
-  const isBoss = (w === waveCount) || ((level % 5 === 0 || level === 40) && w === Math.floor(waveCount * 0.6));
-  if (isBoss) { const b = pickBoss(level); return { name: C.ENEMIES[b].name, boss: true }; }
+  if (w === waveCount) { const b = pickBoss(level); return { name: C.ENEMIES[b].name, boss: true }; }
   const main = basics[(w + level) % basics.length] || 'slime';
   return { name: C.ENEMIES[main].name, boss: false };
 }
@@ -143,7 +151,7 @@ function buildLevel(n) {
       gold: big ? (24 + n * 3) : (8 + n),            // 大的金币多
     });
   }
-  const waveCount = clamp(8 + Math.floor(n / 3), 8, 18);
+  const waveCount = WAVES;   // 固定 10 波，第 10 波 Boss
   const towers = C.TOWER_KEYS.filter((k) => (C.TOWERS[k].unlock || 1) <= n);
   const maxTowers = clamp(8 + Math.floor(n / 4), 8, 18);   // 防御塔总数上限（限制策略；障碍清除后可用位更多）
   return {

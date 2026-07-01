@@ -228,6 +228,10 @@
   #overlay .box { background: rgba(22,30,22,.98); border: 2px solid rgba(255,200,90,.55); border-radius: 18px; padding: 22px 32px; text-align: center; }
   #overlay .t { color: #ffe9a8; font-size: 24px; font-weight: 900; } #overlay .s { color: #c8b89f; font-size: 13px; margin: 8px 0 14px; }
   .ovic { width: 28px; height: 28px; object-fit: contain; vertical-align: middle; }
+  /* Boss 来袭红色警报（屏幕四周红光脉冲） */
+  #bossAlarm { position: absolute; inset: 0; z-index: 49; pointer-events: none; display: none; box-shadow: inset 0 0 120px 30px rgba(220,30,30,.72), inset 0 0 40px 8px rgba(255,80,60,.55); }
+  #bossAlarm.on { display: block; animation: bossPulse 0.55s ease-in-out 3; }
+  @keyframes bossPulse { 0%,100% { opacity: .25; } 50% { opacity: 1; } }
   #chestNum { position: absolute; right: -4px; top: -4px; min-width: 16px; height: 16px; padding: 0 3px; border-radius: 9px; background: #f2a531; color: #4a2b08; font-size: 11px; font-weight: 900; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(0,0,0,.4); }
   #chestBtn { position: relative; }
   /* 宝箱开启揭示卡 */
@@ -267,6 +271,7 @@
     <div class="btn-ic" id="menuBtn"><img src="assets/ic_menu.png" alt="菜单"></div>
   </div>
   <div id="popup"></div>
+  <div id="bossAlarm"></div>
   <div id="banner"><div class="bncard"><img id="bnGif" alt="" onerror="this.style.display='none'"><div id="bnText"></div></div></div>
   <div id="unlock"><div class="ucard"><div class="uglow"><img id="uImg"></div><div class="un" id="uName"></div><div class="ud" id="uDesc"></div><div class="btn up" id="uOk" style="display:inline-block">知道了</div></div></div>
   <div id="overlay"><div class="box"><div class="t" id="ovT"></div><div class="s" id="ovS"></div><div class="row"><div class="btn up" id="ovNext">下一关</div><div class="btn sell" id="ovReplay">重玩</div><div class="btn" style="background:#557" id="ovMenu">选关</div></div></div></div>

@@ -599,7 +599,7 @@
     // Boss 来袭：波次推进到 boss 波时播放该主题 Boss 视频
     if (hud.w !== s.wave) {
       hud.w = s.wave;
-      if (s.wave >= 1 && s.phase === 'spawning' && (level.wavePreview(s.wave) || {}).boss) playCut('cut_boss_' + level.theme, 'Boss 来袭', null);
+      if (s.wave >= 1 && s.phase === 'spawning' && (level.wavePreview(s.wave) || {}).boss) { playCut('cut_boss_' + level.theme, 'Boss 即将出现', null); bossAlarm(); }
     }
     if (hud.p !== s.phase) {
       hud.p = s.phase;
@@ -774,6 +774,8 @@
   /* ---------- 轻量过渡横幅（开场/过关/失败/Boss来袭） ----------
    * 不再全屏播视频；改为居中横幅 + 小 gif，~1.8s 自动消失。
    * 开场/过关/失败会短暂暂停(cutBusy)；Boss来袭是战斗中的警告，不暂停。 */
+  // Boss 来袭红色警报：屏幕四周红光脉冲 ~1.7s
+  function bossAlarm() { const el = $('bossAlarm'); el.classList.remove('on'); void el.offsetWidth; el.classList.add('on'); clearTimeout(bossAlarm._t); bossAlarm._t = setTimeout(() => el.classList.remove('on'), 1750); }
   function playCut(name, tag, onDone) {
     const box = $('banner'), gif = $('bnGif');
     const kind = /boss/.test(name) ? 'boss' : /win/.test(name) ? 'win' : /lose/.test(name) ? 'lose' : 'start';
@@ -897,6 +899,9 @@
   if (q.has('tutdbg')) {   // 截图调试：强制第1关新手引导
     localStorage.removeItem(TUTKEY);
     setTimeout(() => { $('banner').style.display = 'none'; cutBusy = false; unlockQ = []; $('unlock').style.display = 'none'; tutStart(1); const step = parseInt(q.get('tutdbg'), 10); if (step > 0) { tut.step = Math.min(tut.steps.length - 1, step); renderTutStep(); } }, 2100);
+  }
+  if (q.has('bossdbg')) {   // 截图调试：Boss 来袭横幅 + 红色警报
+    setTimeout(() => { $('unlock').style.display = 'none'; unlockQ = []; tut.active = false; $('tut').style.display = 'none'; playCut('cut_boss_' + level.theme, 'Boss 即将出现', null); bossAlarm(); }, 500);
   }
   if (q.has('demo')) {
     if (pn < 1) startLevel(parseInt(q.get('demo'), 10) || 1); unlockQ = []; $('unlock').style.display = 'none';

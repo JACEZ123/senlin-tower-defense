@@ -214,7 +214,7 @@ function spawnEnemy(s, item, atX, atY, hpScale) {
   const hp = def.hp * (item.hpMul || 1) * (hpScale || 1);
   s.enemies.push({ id: s._eid++, type: item.type, def,
     x: atX != null ? atX : p0.x, y: atY != null ? atY : p0.y, seg: atX != null ? (item._seg || 0) : 0, t: 0,
-    hp, maxHp: hp, spMul: item.spMul || 1, slowT: 0, slowMul: 1, poisonT: 0, poisonDps: 0, burnT: 0, netT: 0 });
+    hp, maxHp: hp, spMul: item.spMul || 1, goldMul: item.goldMul != null ? item.goldMul : 1, slowT: 0, slowMul: 1, poisonT: 0, poisonDps: 0, burnT: 0, netT: 0 });
 }
 
 function update(s, dt) {
@@ -283,7 +283,8 @@ function moveEnemies(s, dt) {
 }
 
 function onDeath(s, e) {
-  s.gold += e.def.gold; pushFloat(s, e.x, e.y, '+' + e.def.gold, '#ffd23f');
+  const g = Math.max(1, Math.round(e.def.gold * (e.goldMul || 1)));   // 前期怪给钱少(goldMul)
+  s.gold += g; pushFloat(s, e.x, e.y, '+' + g, '#ffd23f');
   if (e.def.split && !e._splitChild) {
     for (let i = 0; i < e.def.split; i++) {
       const off = (i - (e.def.split - 1) / 2) * 24;
