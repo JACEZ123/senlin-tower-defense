@@ -20,6 +20,7 @@ function createState(level) {
     nextTimer: 8, firstDelay: 8, betweenDelay: 6,   // 自动出怪倒计时
     effects: [], focusId: 0,                         // 命中特效 / 集火目标
     obstacles: (level.obstacles || []).map((o, i) => ({ id: 9000 + i, x: o.x, y: o.y, type: o.type, hp: o.hp, maxHp: o.hp, gold: o.gold, big: !!o.big, sizeScale: o.sizeScale || 1 })),
+    chests: [], _cid: 1,                             // 已放置的宝箱（道具）
     maxTowers: level.maxTowers, selectedId: 0,
   };
   if (s.heroEnabled) spawnHero(s);
@@ -54,6 +55,7 @@ function applyCommand(s, cmd) {
     case 'moveHero':  return moveHero(s, cmd.x, cmd.y);
     case 'select':    s.selectedId = cmd.id || 0; return true;
     case 'focus':     s.focusId = (s.focusId === cmd.id) ? 0 : cmd.id; return true;  // 点怪集火/再点取消
+    case 'placeChest':return placeChest(s, cmd.x, cmd.y, cmd.item);
   }
   return false;
 }
@@ -127,6 +129,73 @@ function sell(s, id) {
   return true;
 }
 
+/* ----- 宝箱（可放置道具） ----- */
+// 宝箱占位规则：与塔类似但不计入塔上限；可稍靠近路径（部分效果需贴路）；不与塔/宝箱/障碍重叠。
+function canPlaceChest(s, x, y) {
+  if (x < 44 || x > C.VW - 44 || y < 66 || y > C.VH - 46) return { ok: false, why: 'oob' };
+  const d = distToPath(s, x, y);
+  if (d < 34) return { ok: false, why: 'onpath' };
+  if (d > 150) return { ok: false, why: 'far' };
+  for (const t of s.towers) if (Math.hypot(t.x - x, t.y - y) < 62) return { ok: false, why: 'near' };
+  for (const c of s.chests) if (Math.hypot(c.x - x, c.y - y) < 62) return { ok: false, why: 'near' };
+  for (const o of s.obstacles) if (Math.hypot(o.x - x, o.y - y) < 46 * (o.sizeScale || 1)) return { ok: false, why: 'obstacle' };
+  return { ok: true };
+}
+function placeChest(s, x, y, item) {
+  if (!item || !canPlaceChest(s, x, y).ok) return false;
+  const c = { id: 20000 + s._cid++, x, y, item, t: 0, timer: item.period || 0, acc: 0 };
+  s.chests.push(c);
+  applyChestInstant(s, c);   // 即时类效果立刻结算
+  return true;
+}
+function applyChestInstant(s, c) {
+  const it = c.item;
+  if (it.effect === 'gold') { s.gold += it.amount; pushFloat(s, c.x, c.y, '+' + it.amount, '#ffd23f'); }
+  else if (it.effect === 'expbook') {
+    let best = null, bd = 1e9;
+    for (const t of s.towers) {
+      const def = C.TOWERS[t.key], canUp = !t.branch && t.level < def.levels.length - 1;
+      if (!canUp) continue; const d = dist(c.x, c.y, t.x, t.y);
+      if (d <= it.radius && d < bd) { bd = d; best = t; }
+    }
+    if (best) { best.level += 1; pushFloat(s, best.x, best.y, '★免费升级', '#b6ff5a'); }
+    else pushFloat(s, c.x, c.y, '附近无可升级塔', '#ffe27a');
+  }
+}
+// 攻速光环：每帧刷新各塔 hasteMul（供 runTowers 缩短冷却）
+function applyChestAuras(s) {
+  for (const t of s.towers) t.hasteMul = 1;
+  for (const c of s.chests) {
+    if (c.item.effect !== 'haste') continue;
+    for (const t of s.towers) if (dist(c.x, c.y, t.x, t.y) <= c.item.radius) t.hasteMul *= c.item.mul;
+  }
+}
+function runChests(s, dt) {
+  for (const c of s.chests) {
+    const it = c.item; c.t += dt;
+    if (it.effect === 'income') {
+      c.acc += it.rate * dt;
+      if (c.acc >= 1) { const g = Math.floor(c.acc); c.acc -= g; s.gold += g; pushFloat(s, c.x, c.y - 4, '+' + g, '#ffe27a'); }
+    } else if (it.effect === 'net') {
+      c.timer -= dt;
+      if (c.timer <= 0) {
+        c.timer = it.period;
+        let best = null, bl = 1e9;
+        for (const e of s.enemies) { if (e.netT > 0 || e.def.boss) continue; if (dist(c.x, c.y, e.x, e.y) > it.range) continue; if (e.hp < bl) { bl = e.hp; best = e; } }
+        if (best) { best.netT = it.dur; s.effects.push({ kind: 'net', x: best.x, y: best.y, color: '#dfe', t: 0, life: 0.4 }); }
+      }
+    } else if (it.effect === 'burst') {
+      c.timer -= dt;
+      if (c.timer <= 0) {
+        c.timer = it.period;
+        let best = null, bh = -1;
+        for (const e of s.enemies) { if (dist(c.x, c.y, e.x, e.y) > it.range) continue; if (e.maxHp > bh) { bh = e.maxHp; best = e; } }
+        if (best) { dmgEnemy(s, best, it.dmg, true); s.effects.push({ kind: 'arcane', x: best.x, y: best.y, color: '#c77dff', r: 44, t: 0, life: 0.5 }); pushFloat(s, best.x, best.y, '-' + it.dmg, '#c77dff'); }
+      }
+    }
+  }
+}
+
 function spawnHero(s, atX, atY) {
   s.hero = { x: atX || C.VW / 2, y: atY || C.VH - 120, tx: atX || C.VW / 2, ty: atY || C.VH - 120,
     cd: 0, hp: C.HERO.maxHp, maxHp: C.HERO.maxHp, angle: -Math.PI / 2 };
@@ -145,7 +214,7 @@ function spawnEnemy(s, item, atX, atY, hpScale) {
   const hp = def.hp * (item.hpMul || 1) * (hpScale || 1);
   s.enemies.push({ id: s._eid++, type: item.type, def,
     x: atX != null ? atX : p0.x, y: atY != null ? atY : p0.y, seg: atX != null ? (item._seg || 0) : 0, t: 0,
-    hp, maxHp: hp, spMul: item.spMul || 1, slowT: 0, slowMul: 1, poisonT: 0, poisonDps: 0, burnT: 0 });
+    hp, maxHp: hp, spMul: item.spMul || 1, slowT: 0, slowMul: 1, poisonT: 0, poisonDps: 0, burnT: 0, netT: 0 });
 }
 
 function update(s, dt) {
@@ -162,7 +231,9 @@ function update(s, dt) {
   }
   moveEnemies(s, dt);
   healAura(s, dt);
+  applyChestAuras(s);
   runTowers(s, dt);
+  runChests(s, dt);
   runHero(s, dt);
   runBullets(s, dt);
   for (const f of s.floats) f.t += dt;
@@ -188,6 +259,7 @@ function moveEnemies(s, dt) {
   for (const e of s.enemies) {
     let speed = e.def.speed * e.spMul;
     if (e.slowT > 0) { e.slowT -= dt; speed *= e.slowMul; }
+    if (e.netT > 0) { e.netT -= dt; speed = 0; }        // 捕网：完全定身
     if (e.poisonT > 0) { e.poisonT -= dt; e.hp -= e.poisonDps * dt; }
     if (e.burnT > 0) { e.burnT -= dt; e.hp -= e.burnDps * dt; }
     if (e.hitT > 0) e.hitT -= dt;
@@ -254,7 +326,7 @@ function runTowers(s, dt) {
     let target = pickTarget(s, t.x, t.y, st.range);
     if (!target) target = pickObstacle(s, t.x, t.y, st.range);   // 仅当玩家点选了某障碍物时才打它
     if (target) t.angle = Math.atan2(target.y - t.y, target.x - t.x);
-    if (target && t.cd <= 0) { t.cd = st.rate; fire(s, t.x, t.y - 18, target, st); }
+    if (target && t.cd <= 0) { t.cd = st.rate / (t.hasteMul || 1); fire(s, t.x, t.y - 18, target, st); }   // 疾速光环缩短冷却
   }
 }
 
@@ -335,4 +407,4 @@ function runHero(s, dt) {
   }
 }
 
-module.exports = { createState, applyCommand, update, dist, towerStats, canBuild };
+module.exports = { createState, applyCommand, update, dist, towerStats, canBuild, canPlaceChest };

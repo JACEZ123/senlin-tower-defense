@@ -28,10 +28,11 @@
   const PORTALS = THEMES.map((t) => 'portal_' + t);                       // 8 主题怪物入口传送门
   const BASES = []; for (const t of THEMES) for (let s = 0; s < 3; s++) BASES.push(`base_${t}_${s}`);   // 每主题基地×3态(完好/残破/倒塌)
   const UIIMG = ['ic_play', 'ic_win', 'ic_lose', 'ic_star', 'ic_lock', 'logo_title'];        // 替代 emoji 的图标（Boss来袭用视频，无需 ic_boss）
+  const CHESTIMG = ['chest_closed', 'ic_hand', 'sign_wood', 'frame_common', 'frame_rare', 'frame_epic', ...C.CHEST_ITEMS.map((it) => it.img)];  // 宝箱/引导美术
   const ENIMG = [...new Set(Object.values(C.ENEMIES).map((e) => e.img))];   // 每种怪的专属立绘 en_<key>
   const towerImg = (t) => `tw_${t.key}_${t.branch ? 3 : t.level + 1}`;   // 按等级取形象
   const IMG = {};
-  await Promise.all([...TW, ...ATKIMG, ...ICONS, ...OBS, 'hero_ranger', ...ENIMG, ...BG, ...PORTALS, ...BASES, ...UIIMG].map((k) => new Promise((r) => { const im = new Image(); im.onload = () => { IMG[k] = im; r(); }; im.onerror = () => r(); im.src = `assets/${k}.png`; })));
+  await Promise.all([...TW, ...ATKIMG, ...ICONS, ...OBS, 'hero_ranger', ...ENIMG, ...BG, ...PORTALS, ...BASES, ...UIIMG, ...CHESTIMG].map((k) => new Promise((r) => { const im = new Image(); im.onload = () => { IMG[k] = im; r(); }; im.onerror = () => r(); im.src = `assets/${k}.png`; })));
   // 动画清单(由生成流水线产出): {tag:{asset,frames}}. tag=idle_<key>/atk_<key>. 决定哪些精灵表按帧动画。
   const ATK = {};   // key -> {asset, frames} 攻击动画
   try {
@@ -70,6 +71,46 @@
   const gems = () => { try { return parseInt(localStorage.getItem(GKEY), 10) || 0; } catch { return 0; } };
   const setGems = (v) => localStorage.setItem(GKEY, String(Math.max(0, v | 0)));
   const addGems = (n) => { setGems(gems() + n); return gems(); };
+  // 宝箱库存(持久化)：每局胜利 +1；钻石购买；看广告(接入微信后启用)。新玩家赠 1 个试玩。
+  const CHKEY = 'wttl_chests', CHSEED = 'wttl_chests_seed', CHEST_PRICE = 20;
+  const chestStock = () => { try { return parseInt(localStorage.getItem(CHKEY), 10) || 0; } catch { return 0; } };
+  const setChestStock = (v) => localStorage.setItem(CHKEY, String(Math.max(0, v | 0)));
+  const addChest = (n) => { setChestStock(chestStock() + n); return chestStock(); };
+  if (!localStorage.getItem(CHSEED)) { localStorage.setItem(CHSEED, '1'); if (chestStock() === 0) setChestStock(1); }   // 首次赠箱
+  const RARITY_CN = { common: '普通', rare: '稀有', epic: '史诗' };
+  function rollChestItem() {
+    const pool = C.CHEST_ITEMS, W = C.CHEST_RARITY_WEIGHT;
+    let tot = 0; for (const it of pool) tot += (W[it.rarity] || 10);
+    let r = Math.random() * tot;
+    for (const it of pool) { r -= (W[it.rarity] || 10); if (r <= 0) return it; }
+    return pool[0];
+  }
+  let chestMode = false;   // 放置宝箱模式：点击空地放置
+  function updateChestBtn() {
+    const inGame = !!state, n = chestStock();
+    $('chestBtn').style.display = inGame ? 'flex' : 'none';
+    $('chestNum').textContent = n;
+    $('chestBtn').style.outline = chestMode ? '3px solid #ffd23f' : 'none';
+  }
+  function toggleChestMode() {
+    if (!state) return;
+    if (chestMode) { chestMode = false; updateChestBtn(); return; }
+    if (chestStock() <= 0) { openChestBuy(); return; }
+    chestMode = true; updateChestBtn();
+    state.floats.push({ x: C.VW / 2, y: 120, text: '点击空地放置宝箱', color: '#ffe27a', t: -0.6 });   // 提示(延迟淡出)
+  }
+  function showChestReveal(item) {
+    $('crFrame').src = `assets/frame_${item.rarity}.png`;
+    $('crItem').src = `assets/${item.img}.png`; $('crItem').style.display = '';
+    $('crName').textContent = `${RARITY_CN[item.rarity] || ''} · ${item.name}`;
+    $('crDesc').textContent = item.desc || '';
+    const box = $('chestReveal'); box.style.display = 'flex';
+    // 重新触发弹出动画
+    const card = $('crCard'); card.style.animation = 'none'; void card.offsetWidth; card.style.animation = '';
+    clearTimeout(showChestReveal._t); showChestReveal._t = setTimeout(() => { box.style.display = 'none'; }, 1900);
+  }
+  function openChestBuy() { chestMode = false; updateChestBtn(); $('chestBuy').style.display = 'flex'; }
+  function closeChestBuy() { $('chestBuy').style.display = 'none'; }
   // 皮肤拥有/装备持久化：{ owned:{'arrow_royal':true}, equip:{arrow:'royal'} }
   const SKKEY = 'wttl_skins';
   const skinData = () => { try { return JSON.parse(localStorage.getItem(SKKEY)) || { owned: {}, equip: {} }; } catch { return { owned: {}, equip: {} }; } };
@@ -154,7 +195,7 @@
 
   /* ---------- 首页（入口） ---------- */
   const ATKDESC = { single: '单体物理', splash: '范围溅射', slow: '减速冰冻', poison: '持续中毒', chain: '闪电连锁', pierce: '穿透狙击', burn: '范围灼烧', arcane: '真伤奥术' };
-  function hideScreens() { for (const id of ['menu', 'home', 'shop', 'codex', 'settings', 'overlay', 'popup']) $(id).style.display = 'none'; }
+  function hideScreens() { for (const id of ['menu', 'home', 'shop', 'codex', 'settings', 'overlay', 'popup']) $(id).style.display = 'none'; updateChestBtn(); }
   function showHome() {
     state = null; grade = ''; hideScreens();
     $('home').style.display = 'block'; $('home').style.backgroundImage = 'url(assets/bg_home.png)';
@@ -280,7 +321,7 @@
   }
   function startLevel(n) {
     level = LV.buildLevel(n); state = E.createState(level); anim = 0; speed = 1; $('speedNum').textContent = '1';
-    grade = THEME_GRADE[level.theme] || ''; setPaused(false);
+    grade = THEME_GRADE[level.theme] || ''; setPaused(false); chestMode = false;
     baseHitAt = -99; lastLives = null;
     popupSlot = -1; for (const k in hud) delete hud[k];
     level.towers.forEach(ensureSkinSheets);   // 预载已装备皮肤精灵表
@@ -291,7 +332,7 @@
     playCut('cut_start', level.name, showNextUnlock);
   }
   function showNextUnlock() {
-    if (!unlockQ.length) { $('unlock').style.display = 'none'; return; }
+    if (!unlockQ.length) { $('unlock').style.display = 'none'; tutStart(level.id); return; }
     const k = unlockQ[0], d = C.TOWERS[k];
     $('uImg').src = `assets/${d.img}.png`; $('uName').textContent = '新守卫 · ' + d.name;
     const ad = { single: '直线单体远程攻击', splash: '范围溅射爆炸', slow: '减速冰冻', poison: '持续中毒', chain: '闪电连锁多目标', pierce: '超远穿透狙击', burn: '范围灼烧', arcane: '无视护甲奥术' }[d.attack] || '';
@@ -321,6 +362,11 @@
       ctx.save(); ctx.fillStyle = 'rgba(140,230,90,.8)';
       for (let i = 0; i < 3; i++) { const ph = (anim * 1.5 + i * 0.6 + e.id) % 1; ctx.globalAlpha = (1 - ph) * 0.8; ctx.beginPath(); ctx.arc(X + Math.sin(i * 2 + e.id) * R * 0.5, Y - ph * R * 1.4, vk(3.5), 0, 7); ctx.fill(); }
       ctx.restore();
+    }
+    if (e.netT > 0) {                        // 捕网：网格罩住 + 定身标记
+      ctx.save(); ctx.strokeStyle = 'rgba(210,255,225,.85)'; ctx.lineWidth = vk(2); const gr = R * 1.1;
+      for (let i = -2; i <= 2; i++) { ctx.beginPath(); ctx.moveTo(X + i * gr / 2.2, Y - gr); ctx.lineTo(X + i * gr / 2.2, Y + gr); ctx.stroke(); ctx.beginPath(); ctx.moveTo(X - gr, Y + i * gr / 2.2); ctx.lineTo(X + gr, Y + i * gr / 2.2); ctx.stroke(); }
+      ctx.globalAlpha = 0.18; ctx.beginPath(); ctx.arc(X, Y, gr, 0, 7); ctx.fillStyle = '#8fe3c8'; ctx.fill(); ctx.restore();
     }
     if (e.burnT > 0) {                       // 灼烧：跳动火舌
       ctx.save();
@@ -414,6 +460,10 @@
       ctx.globalAlpha = 1 - pr; ctx.strokeStyle = col; ctx.lineWidth = vk(2.5);
       ctx.beginPath(); ctx.arc(X, Y, vk(16) * (0.5 + pr), 0, 7); ctx.stroke();
       for (let i = 0; i < 6; i++) { const a = i * 1.05 + pr * 3; ctx.beginPath(); ctx.arc(X + Math.cos(a) * vk(16) * (0.5 + pr), Y + Math.sin(a) * vk(16) * (0.5 + pr), vk(2.5), 0, 7); ctx.fillStyle = col; ctx.fill(); }
+    } else if (k === 'net') {                    // 捕网撒出：扩散网环
+      ctx.globalAlpha = 1 - pr; ctx.strokeStyle = col; ctx.lineWidth = vk(2.5);
+      ctx.beginPath(); ctx.arc(X, Y, vk(30) * (0.3 + pr), 0, 7); ctx.stroke();
+      for (let i = 0; i < 8; i++) { const a = i * 0.785; const rr = vk(30) * (0.3 + pr); ctx.beginPath(); ctx.moveTo(X, Y); ctx.lineTo(X + Math.cos(a) * rr, Y + Math.sin(a) * rr); ctx.stroke(); }
     } else {                                     // 单体（箭）命中星爆
       ctx.globalAlpha = 1 - pr; ctx.strokeStyle = col; ctx.lineWidth = vk(2.5);
       for (let i = 0; i < 6; i++) { const a = i * 1.05; const r0 = vk(3), r1 = vk(3 + 11 * pr); ctx.beginPath(); ctx.moveTo(X + Math.cos(a) * r0, Y + Math.sin(a) * r0); ctx.lineTo(X + Math.cos(a) * r1, Y + Math.sin(a) * r1); ctx.stroke(); }
@@ -460,6 +510,15 @@
     if (menu && menu.mode === 'build') { ctx.beginPath(); ctx.arc(vx(menu.x), vy(menu.y), vk(10), 0, 7); ctx.fillStyle = 'rgba(255,235,140,.5)'; ctx.fill(); }
     // 选中塔射程
     if (s.selectedId) { const t = s.towers.find((x) => x.id === s.selectedId); if (t) { const st = E.towerStats(t); ctx.beginPath(); ctx.arc(vx(t.x), vy(t.y), vk(st.range), 0, 7); ctx.fillStyle = 'rgba(120,200,255,.12)'; ctx.fill(); ctx.strokeStyle = 'rgba(120,200,255,.5)'; ctx.lineWidth = vk(2); ctx.stroke(); } }
+    // 宝箱（可放置道具）：光环/范围提示 + 箱体 + 顶部道具图标浮动
+    for (const c of s.chests) {
+      const it = c.item;
+      if (it.effect === 'haste') { ctx.save(); ctx.globalAlpha = 0.14 + 0.06 * (0.5 + 0.5 * Math.sin(anim * 3)); ctx.beginPath(); ctx.arc(vx(c.x), vy(c.y), vk(it.radius), 0, 7); ctx.fillStyle = '#7CFC4D'; ctx.fill(); ctx.strokeStyle = 'rgba(124,252,77,.5)'; ctx.lineWidth = vk(2); ctx.stroke(); ctx.restore(); }
+      else if (it.effect === 'burst' || it.effect === 'net') { ctx.save(); ctx.globalAlpha = 0.10; ctx.beginPath(); ctx.arc(vx(c.x), vy(c.y), vk(it.range), 0, 7); ctx.fillStyle = it.effect === 'burst' ? '#c77dff' : '#8fe3c8'; ctx.fill(); ctx.restore(); }
+      shadow(c.x, c.y, 18);
+      const cbob = Math.sin(anim * 2.4 + c.id) * 2;
+      drawSprite(it.img || 'chest_closed', c.x, c.y + 2 + cbob, 62, 0.72);
+    }
     // 塔
     for (const t of s.towers) {
       const st = E.towerStats(t), bob = Math.sin(anim * 3 + t.id * 1.7) * 1.6;       // 待机起伏
@@ -546,14 +605,14 @@
       hud.p = s.phase;
       if (s.phase === 'won' || s.phase === 'lost') {
         let reward = 0;
-        if (s.phase === 'won') { const first = level.id > prog().cleared; reward = first ? 10 : 3; addGems(reward); clear(level.id); }
+        if (s.phase === 'won') { const first = level.id > prog().cleared; reward = first ? 10 : 3; addGems(reward); addChest(1); clear(level.id); }   // 胜利赠 1 宝箱
         const showBox = () => {
           $('overlay').style.display = 'flex';
           $('ovT').innerHTML = s.phase === 'won'
             ? '<img class="ovic" src="assets/ic_win.png" onerror="this.style.display=\'none\'"> 过关！'
             : '<img class="ovic" src="assets/ic_lose.png" onerror="this.style.display=\'none\'"> 失败';
           $('ovS').innerHTML = s.phase === 'won'
-            ? (level.id >= 40 ? '通关全部 40 关！' : level.name + ' 通关') + `　<img class="ovic" style="width:18px;height:18px" src="assets/ic_gem.png" onerror="this.style.display='none'"> +${reward}`
+            ? (level.id >= 40 ? '通关全部 40 关！' : level.name + ' 通关') + `　<img class="ovic" style="width:18px;height:18px" src="assets/ic_gem.png" onerror="this.style.display='none'"> +${reward}　<img class="ovic" style="width:18px;height:18px" src="assets/chest_closed.png" onerror="this.style.display='none'"> +1`
             : '基地被攻破，再试一次';
           $('ovNext').style.display = (s.phase === 'won' && level.id < 40) ? '' : 'none';
         };
@@ -613,10 +672,71 @@
     ctx.beginPath(); ctx.moveTo(cx2 - xr, cy2 - xr); ctx.lineTo(cx2 + xr, cy2 + xr); ctx.moveTo(cx2 + xr, cy2 - xr); ctx.lineTo(cx2 - xr, cy2 + xr); ctx.stroke();
   }
 
+  /* ---------- 新手引导（第1关手把手：遮罩 + 高亮镂空 + 木牌 + 手指） ---------- */
+  const TUTKEY = 'wttl_tut_done';
+  const tut = { active: false, step: 0, steps: [], buildSpot: null };
+  const domCenter = (id) => { const r = $(id).getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; };
+  function findBuildSpot() {
+    for (let yy = 130; yy < C.VH - 100; yy += 14) for (let xx = 120; xx < C.VW - 120; xx += 14) if (E.canBuild(state, xx, yy).ok) return { x: xx, y: yy };
+    return { x: C.VW / 2, y: C.VH / 2 };
+  }
+  function buildTutSteps() {
+    const bs = tut.buildSpot;
+    tut.steps = [
+      { text: '欢迎来到森林塔防大作战！跟着提示，几步就能上手。', next: true },
+      { text: '点击这块发光的空地，建造你的第一座守卫。', target: () => ({ x: vx(bs.x), y: vy(bs.y) }), holeR: 46, hand: true, wait: 'build' },
+      { text: '守卫会自动攻击路过的怪物。点击守卫可以升级、进化它。', target: () => { const t = state.towers[0]; return t ? { x: vx(t.x), y: vy(t.y) } : { x: vx(bs.x), y: vy(bs.y) }; }, holeR: 42, next: true },
+      { text: '点击右上角的宝箱按钮，把宝箱放到空地，开出随机增益！', target: () => domCenter('chestBtn'), holeR: 30, hand: true, wait: 'chestPlaced' },
+      { text: '怪物从传送门出发，走到你的基地就会扣血。守住基地！', target: () => { const p = level.path[level.path.length - 1]; return { x: vx(p.x), y: vy(p.y) }; }, holeR: 50, next: true },
+      { text: '准备完成！波次会自动开始，祝你好运~', next: true, done: true },
+    ];
+  }
+  function tutStart(n) {
+    if (n !== 1 || localStorage.getItem(TUTKEY)) return;
+    if (chestStock() === 0) setChestStock(1);   // 确保引导中有宝箱可放
+    updateChestBtn();
+    tut.buildSpot = findBuildSpot(); tut.active = true; tut.step = 0;
+    buildTutSteps(); $('tut').style.display = 'block'; renderTutStep();
+  }
+  function renderTutStep() {
+    const st = tut.steps[tut.step]; if (!st) return tutFinish();
+    $('tutTxt').textContent = st.text;
+    $('tutNext').style.display = st.wait ? 'none' : 'block';
+    const hole = $('tutHole'), hand = $('tutHand'), mask = $('tutMask');
+    mask.style.display = 'block';   // 整屏变暗(点击穿透)，聚焦引导
+    if (st.target) {   // 有目标：聚光灯圆环 + 手指高亮
+      const p = st.target(), r = st.holeR || 44;
+      hole.style.display = 'block'; hole.style.width = hole.style.height = (r * 2) + 'px';
+      hole.style.left = (p.x - r) + 'px'; hole.style.top = (p.y - r) + 'px';
+      if (st.hand) { hand.style.display = 'block'; hand.style.left = (p.x + r * 0.4) + 'px'; hand.style.top = (p.y + r * 0.4) + 'px'; } else hand.style.display = 'none';
+    } else { hole.style.display = 'none'; hand.style.display = 'none'; }
+  }
+  function tutAdvance() {
+    const cur = tut.steps[tut.step];
+    if (cur && cur.done) return tutFinish();
+    tut.step++;
+    if (tut.step >= tut.steps.length) return tutFinish();
+    renderTutStep();
+  }
+  function tutOnEvent(evt) { if (!tut.active) return; const st = tut.steps[tut.step]; if (st && st.wait === evt) tutAdvance(); }
+  function tutFinish() { tut.active = false; $('tut').style.display = 'none'; localStorage.setItem(TUTKEY, '1'); }
+  $('tutNext').onclick = tutAdvance;
+
   /* ---------- 交互 ---------- */
   function onTap(cx, cy) {
     if (!state || $('unlock').style.display === 'flex') return;
     const v = toV(cx, cy);
+    if (chestMode) {   // 放置宝箱：点空地落箱→随机开箱
+      const res = E.canPlaceChest(state, v.x, v.y);
+      if (res.ok) {
+        const item = rollChestItem();
+        if (E.applyCommand(state, { type: 'placeChest', x: v.x, y: v.y, item })) {
+          addChest(-1); chestMode = false; updateChestBtn(); showChestReveal(item);
+          if (tut.active) tutOnEvent('chestPlaced');
+        }
+      } else { state.floats.push({ x: v.x, y: v.y, text: '此处不可放置', color: '#ff7a6a', t: 0 }); }
+      return;
+    }
     if (menu) {   // 菜单打开：命中图标执行；点中心或外部关闭
       for (let i = 0; i < menu.items.length; i++) { const p = menuItemPos(i); if (Math.hypot(v.x - p.x, v.y - p.y) < ICON + 6) { if (menu.items[i].enabled) menu.items[i].act(); return; } }
       closeMenu(); return;
@@ -639,6 +759,9 @@
   // #4 播放键 = 暂停/继续游戏（波次由倒计时自动开始，不再手动出怪）
   function setPaused(p) { paused = p; $('playIco').style.display = p ? 'block' : 'none'; $('pauseIco').style.display = p ? 'none' : 'flex'; }
   $('startBtn').onclick = () => { if (state) setPaused(!paused); };
+  $('chestBtn').onclick = toggleChestMode;
+  $('cbClose').onclick = closeChestBuy;
+  $('cbBuy').onclick = () => { if (gems() >= CHEST_PRICE) { addGems(-CHEST_PRICE); addChest(1); updateChestBtn(); closeChestBuy(); } else { $('cbBuy').textContent = '钻石不足'; setTimeout(() => { $('cbBuy').innerHTML = '<img class="hud-ic" src="assets/ic_gem.png" onerror="this.style.display=\'none\'"> ' + CHEST_PRICE + ' 钻 换 1 个宝箱'; }, 1200); } };
   $('menuBtn').onclick = openSettings;   // 游戏内 ☰ → 暂停/设置面板（面板内可返回选关）
   // 首页导航
   const goCur = () => { const p = prog(); startLevel(Math.min(40, p.cleared + 1)); };
@@ -704,7 +827,7 @@
 
   /* ---------- 主循环 ---------- */
   let last = 0;
-  function frame(t) { if (!last) last = t; let dt = (t - last) / 1000; last = t; if (dt > .05) dt = .05; dt *= speed; anim += dt; if (state && $('unlock').style.display !== 'flex' && !cutBusy && !settingsBusy) { if (!paused) E.update(state, dt); render(); syncHud(); } requestAnimationFrame(frame); }
+  function frame(t) { if (!last) last = t; let dt = (t - last) / 1000; last = t; if (dt > .05) dt = .05; dt *= speed; anim += dt; if (state && $('unlock').style.display !== 'flex' && !cutBusy && !settingsBusy) { if (tut.active && state.towers.length > 0) tutOnEvent('build'); if (!paused && !tut.active) E.update(state, dt); render(); syncHud(); if (tut.active) renderTutStep(); } requestAnimationFrame(frame); }
   requestAnimationFrame(frame);
 
   const q = new URLSearchParams(location.search), pn = parseInt(q.get('play') || '0', 10);
@@ -712,6 +835,7 @@
   else if (q.has('shopdbg')) { $('loading').style.display = 'none'; showShop(); }
   else if (q.has('dexdbg')) { $('loading').style.display = 'none'; showCodex(); const tb = q.get('dexdbg'); if (tb === 'mob' || tb === 'boss') { dexTab = tb; dexSel = 0; renderCodex(); } }
   else if (q.has('homedbg')) { $('loading').style.display = 'none'; showHome(); }
+  else if (q.has('chestdbg') || q.has('tutdbg')) { $('loading').style.display = 'none'; startLevel(1); }
   else if (q.has('demo') || q.has('menudbg') || q.has('solo') || q.has('vfxtest') || q.has('setdbg')) { $('loading').style.display = 'none'; showMenu(); }
   else runLoading(showHome);   // 正常进入：先播加载页，再进首页
   if (q.has('setdbg')) setTimeout(() => {   // 截图调试：进第1关并打开设置面板
@@ -759,6 +883,20 @@
       const pump = () => { if (state.phase === 'ready') E.applyCommand(state, { type: 'startWave' }); E.update(state, 1 / 30); render(); syncHud(); if (--steps > 0) setTimeout(pump, 16); };
       pump();
     }, 400);
+  }
+  if (q.has('chestdbg')) {   // 截图调试：放置各类型宝箱 + 展示开箱揭示卡
+    setTimeout(() => {
+      $('banner').style.display = 'none'; cutBusy = false; unlockQ = []; $('unlock').style.display = 'none'; tut.active = false; $('tut').style.display = 'none';
+      state.gold = 9999; const spots = [];
+      for (let yy = 120; yy < C.VH - 90 && spots.length < 8; yy += 14) for (let xx = 130; xx < C.VW - 130 && spots.length < 8; xx += 14) { if (E.canPlaceChest(state, xx, yy).ok && spots.every((p) => Math.hypot(p.x - xx, p.y - yy) > 120)) spots.push({ x: xx, y: yy }); }
+      C.CHEST_ITEMS.forEach((it, i) => { if (spots[i]) E.applyCommand(state, { type: 'placeChest', x: spots[i].x, y: spots[i].y, item: it }); });
+      updateChestBtn();
+      if (q.get('chestdbg') === 'reveal') setTimeout(() => { tut.active = false; $('tut').style.display = 'none'; showChestReveal(C.CHEST_ITEMS[5]); }, 2200);
+    }, 400);
+  }
+  if (q.has('tutdbg')) {   // 截图调试：强制第1关新手引导
+    localStorage.removeItem(TUTKEY);
+    setTimeout(() => { $('banner').style.display = 'none'; cutBusy = false; unlockQ = []; $('unlock').style.display = 'none'; tutStart(1); const step = parseInt(q.get('tutdbg'), 10); if (step > 0) { tut.step = Math.min(tut.steps.length - 1, step); renderTutStep(); } }, 2100);
   }
   if (q.has('demo')) {
     if (pn < 1) startLevel(parseInt(q.get('demo'), 10) || 1); unlockQ = []; $('unlock').style.display = 'none';

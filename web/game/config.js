@@ -125,4 +125,18 @@ const ENEMIES = {
   bosstank:{ name: '不灭石神', img: 'en_bosstank', hp: 1000, speed: 34, gold: 140, size: 160, armor: 9,  boss: true, unlock: 25 },
 };
 
-module.exports = { VW, VH, TOTAL_LEVELS, TOWERS, TOWER_KEYS, HERO, ENEMIES };
+/* 宝箱道具池：像塔一样放置到空位，开箱随机翻出一种效果，原地生效。
+ *   effect: gold(即时金币) / income(每秒补给) / expbook(相邻塔免费升级) /
+ *           net(周期困住濒死怪) / haste(相邻塔攻速光环) / burst(周期真伤爆发)
+ *   rarity: common/rare/epic 决定抽中权重 CHEST_RARITY_WEIGHT。img=chest_<id>. */
+const CHEST_ITEMS = [
+  { id: 'gold',    name: '金币宝箱', rarity: 'common', effect: 'gold',    amount: 90,            img: 'chest_gold',   desc: '立即获得 90 金币' },
+  { id: 'income',  name: '补给宝箱', rarity: 'common', effect: 'income',  rate: 1,               img: 'chest_income', desc: '每秒 +1 金币（整局）' },
+  { id: 'expbook', name: '经验之书', rarity: 'common', effect: 'expbook', radius: 150,           img: 'chest_exp',    desc: '相邻一座塔立即免费升 1 级' },
+  { id: 'net',     name: '捕网宝箱', rarity: 'rare',   effect: 'net',     period: 15, dur: 3, range: 280, img: 'chest_net', desc: '每 15s 困住范围内最濒死的怪 3s' },
+  { id: 'haste',   name: '疾速光环', rarity: 'rare',   effect: 'haste',   mul: 1.15, radius: 155, img: 'chest_haste',  desc: '相邻塔攻速 +15%' },
+  { id: 'burst',   name: '奥能宝箱', rarity: 'epic',   effect: 'burst',   period: 20, dmg: 600, range: 230, img: 'chest_burst', desc: '每 20s 对范围内最强怪造成 600 真伤' },
+];
+const CHEST_RARITY_WEIGHT = { common: 60, rare: 30, epic: 10 };
+
+module.exports = { VW, VH, TOTAL_LEVELS, TOWERS, TOWER_KEYS, HERO, ENEMIES, CHEST_ITEMS, CHEST_RARITY_WEIGHT };
