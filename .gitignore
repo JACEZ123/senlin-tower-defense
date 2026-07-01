@@ -1,0 +1,7 @@
+# 系统 / 编辑器垃圾
+.DS_Store
+*.log
+node_modules/
+
+# 微信开发者工具本地产物
+project.private.config.json

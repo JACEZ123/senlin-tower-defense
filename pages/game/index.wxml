@@ -1,0 +1,69 @@
+<view class="root" style="width:{{screenW}}px;height:{{screenH}}px;">
+
+  <!-- 游戏画布 -->
+  <canvas type="2d" id="game" class="game-canvas"
+          style="width:{{screenW}}px;height:{{screenH}}px;"
+          bindtouchstart="onTouch"></canvas>
+
+  <!-- 顶部 HUD -->
+  <view class="hud-top" style="top:{{safeTop}}px;">
+    <view class="hud-pill"><image class="pill-ic" src="/assets/ic_coin.png" mode="aspectFit"></image>{{gold}}</view>
+    <view class="hud-pill"><image class="pill-ic" src="/assets/ic_heart.png" mode="aspectFit"></image>{{lives}}</view>
+    <view class="hud-pill">波次 {{wave}}/{{totalWaves}}</view>
+  </view>
+
+  <!-- 出怪 / 状态 按钮 -->
+  <view class="wave-btn {{phase==='ready'?'ready':''}}" style="top:{{safeTop}}px;"
+        bindtap="onStartWave" wx:if="{{phase==='ready'}}">
+    出怪
+  </view>
+  <view class="wave-btn busy" style="top:{{safeTop}}px;" wx:if="{{phase==='spawning'||phase==='fighting'}}">
+    战斗中…
+  </view>
+
+  <!-- 建造 / 升级 弹窗 -->
+  <view class="popup" wx:if="{{popup.show}}">
+    <!-- 建造选择 -->
+    <block wx:if="{{popup.mode==='build'}}">
+      <view class="popup-title">建造防御塔</view>
+      <view class="tower-grid">
+        <view class="tower-card {{gold>=item.cost?'':'disabled'}}"
+              wx:for="{{shop}}" wx:key="key"
+              data-key="{{item.key}}" bindtap="onBuild">
+          <image class="tower-img" src="/assets/{{item.img}}.png" mode="aspectFit"></image>
+          <view class="tower-name">{{item.name}}</view>
+          <view class="tower-cost"><image class="pill-ic" src="/assets/ic_coin.png" mode="aspectFit"></image>{{item.cost}}</view>
+        </view>
+      </view>
+    </block>
+    <!-- 升级 / 出售 -->
+    <block wx:if="{{popup.mode==='manage'}}">
+      <view class="popup-title">{{popup.name}} · {{popup.lvText}}</view>
+      <view class="manage-row">
+        <view class="btn up {{popup.canUp&&gold>=popup.upCost?'':'disabled'}}"
+              bindtap="onUpgrade" wx:if="{{popup.canUp}}">
+          升级 {{popup.upCost}}
+        </view>
+        <view class="btn maxed" wx:if="{{!popup.canUp}}">已满级</view>
+        <view class="btn sell" bindtap="onSell">出售 +{{popup.refund}}</view>
+      </view>
+      <view class="hint" wx:if="{{popup.heroHint}}">满级已解锁英雄！点击空地指挥移动</view>
+    </block>
+    <view class="popup-close" bindtap="onClosePopup">关闭</view>
+  </view>
+
+  <!-- 底部提示 -->
+  <view class="tip" style="bottom:{{safeBottom}}px;" wx:if="{{phase==='ready'&&wave===0}}">
+    点击平台格子建塔 · 点「出怪」开始
+  </view>
+
+  <!-- 胜负遮罩 -->
+  <view class="overlay" wx:if="{{phase==='won'||phase==='lost'}}">
+    <view class="overlay-card">
+      <view class="overlay-title">{{phase==='won'?'胜利！':'失败'}}</view>
+      <view class="overlay-sub">{{phase==='won'?'成功守住了火山峡谷':'核心被攻破了'}}</view>
+      <view class="btn restart" bindtap="onRestart">重新开始</view>
+    </view>
+  </view>
+
+</view>

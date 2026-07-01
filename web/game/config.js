@@ -1,0 +1,128 @@
+/* =========================================================================
+ * 绿色循环圈（微信小程序版）— 全局配置
+ * 坐标/距离单位 = 虚拟像素；运行时整体等比缩放到屏幕。
+ *
+ * 40 关进程：
+ *   - 塔类型随关卡解锁（开局 2 种 → 第 32 关集齐 8 种）
+ *   - 每种塔满级后可二选一「分支」专精（不同终极效果/技能）
+ *   - 怪物种类随关卡递增、数值递增
+ *   - 英雄在第 40 关解锁
+ * ========================================================================= */
+const VW = 1280, VH = 720;   // 横屏 16:9 虚拟画布
+const TOTAL_LEVELS = 40;
+
+/* ---------------- 防御塔（8 种 + 分支技能树） ----------------
+ * 每塔：cost 建造价；levels[] 三级基础升级；branches{A,B} 满级后二选一专精。
+ * unlock 表示在第几关解锁。img 为精灵键（部分新塔暂复用现有美术，后续替换）。
+ * attack: single 单体 / splash 溅射 / slow 减速 / poison 中毒 / chain 连锁 / pierce 穿透 / burn 灼烧 / arcane 真伤 */
+const TOWERS = {
+  arrow: {
+    name: '兔弓手', img: 'tw_arrow_1', cost: 50, attack: 'single', unlock: 1,
+    levels: [ { dmg: 12, range: 165, rate: 0.5 }, { dmg: 22, range: 180, rate: 0.45, upgrade: 60 }, { dmg: 38, range: 195, rate: 0.4, upgrade: 110 } ],
+    branches: {
+      A: { name: '速射弩', dmg: 40, range: 200, rate: 0.22, upgrade: 200, bullet: { color: '#ffe23f', speed: 760, r: 4 }, desc: '极快连射' },
+      B: { name: '强弓', dmg: 95, range: 250, rate: 0.7, upgrade: 200, attack: 'pierce', bullet: { color: '#fff1a0', speed: 820, r: 6 }, desc: '高伤穿透' },
+    },
+    bullet: { color: '#ffd23f', speed: 620, r: 5 },
+  },
+  cannon: {
+    name: '熊炮手', img: 'tw_cannon_1', cost: 90, attack: 'splash', splash: 80, unlock: 1,
+    levels: [ { dmg: 26, range: 150, rate: 1.3 }, { dmg: 44, range: 160, rate: 1.2, upgrade: 100 }, { dmg: 70, range: 170, rate: 1.1, upgrade: 170 } ],
+    branches: {
+      A: { name: '榴弹炮', dmg: 110, range: 185, rate: 1.0, splash: 120, upgrade: 320, bullet: { color: '#ff7b29', speed: 440, r: 10 }, desc: '大范围爆炸' },
+      B: { name: '导弹塔', dmg: 160, range: 230, rate: 1.6, splash: 70, upgrade: 320, bullet: { color: '#ff5a3d', speed: 520, r: 8 }, desc: '远程高爆' },
+    },
+    bullet: { color: '#ff7b29', speed: 420, r: 8 },
+  },
+  frost: {
+    name: '企鹅法师', img: 'tw_frost_1', cost: 70, attack: 'slow', slow: 0.5, slowDur: 1.6, unlock: 5,
+    levels: [ { dmg: 7, range: 160, rate: 0.9 }, { dmg: 13, range: 175, rate: 0.85, upgrade: 80 }, { dmg: 20, range: 190, rate: 0.8, upgrade: 140 } ],
+    branches: {
+      A: { name: '冰川', dmg: 30, range: 205, rate: 0.8, slow: 0.3, slowDur: 2.4, upgrade: 260, desc: '强力减速' },
+      B: { name: '霜冻', dmg: 24, range: 210, rate: 0.7, slow: 0.55, slowDur: 1.6, attack: 'frostnova', splash: 110, upgrade: 260, bullet: { color: '#8be8e5', speed: 600, r: 7 }, desc: '范围冰冻' },
+    },
+    bullet: { color: '#8be8e5', speed: 560, r: 6 },
+  },
+  poison: {
+    name: '毒蛙', img: 'tw_poison_1', cost: 80, attack: 'poison', dot: 9, dotDur: 3, unlock: 8,
+    levels: [ { dmg: 5, range: 170, rate: 1.0 }, { dmg: 9, range: 185, rate: 0.95, upgrade: 95 }, { dmg: 15, range: 200, rate: 0.9, upgrade: 160 } ],
+    branches: {
+      A: { name: '剧毒', dmg: 18, range: 210, rate: 0.9, dot: 26, dotDur: 4, upgrade: 280, desc: '超高持续毒' },
+      B: { name: '瘟疫', dmg: 14, range: 220, rate: 1.0, dot: 14, dotDur: 3, attack: 'poisonsplash', splash: 100, upgrade: 280, desc: '毒云传播' },
+    },
+    bullet: { color: '#7bd66b', speed: 500, r: 6 },
+  },
+  lightning: {
+    name: '电力松鼠', img: 'tw_lightning_1', cost: 120, attack: 'chain', chain: 3, chainFalloff: 0.7, unlock: 13,
+    levels: [ { dmg: 30, range: 180, rate: 0.9 }, { dmg: 50, range: 195, rate: 0.85, upgrade: 150 }, { dmg: 78, range: 210, rate: 0.8, upgrade: 230 } ],
+    branches: {
+      A: { name: '雷暴', dmg: 120, range: 230, rate: 0.8, chain: 5, upgrade: 400, desc: '连锁更多目标' },
+      B: { name: '电磁炮', dmg: 230, range: 250, rate: 1.0, chain: 2, upgrade: 400, desc: '单体超高伤' },
+    },
+    bullet: { color: '#9fd8ff', speed: 900, r: 5 },
+  },
+  sniper: {
+    name: '鹰眼狙击', img: 'tw_sniper_1', cost: 150, attack: 'pierce', unlock: 18,
+    levels: [ { dmg: 90, range: 320, rate: 1.6 }, { dmg: 150, range: 360, rate: 1.5, upgrade: 180 }, { dmg: 240, range: 400, rate: 1.4, upgrade: 280 } ],
+    branches: {
+      A: { name: '歼灭者', dmg: 520, range: 460, rate: 1.6, upgrade: 480, desc: '超远超高伤' },
+      B: { name: '爆头', dmg: 300, range: 420, rate: 0.9, crit: 0.4, critMul: 3, upgrade: 480, desc: '高暴击快射' },
+    },
+    bullet: { color: '#e8f0ff', speed: 1400, r: 4 },
+  },
+  flame: {
+    name: '火龙宝宝', img: 'tw_flame_1', cost: 110, attack: 'burn', splash: 90, dot: 14, dotDur: 2.5, unlock: 25,
+    levels: [ { dmg: 18, range: 140, rate: 0.5 }, { dmg: 30, range: 150, rate: 0.45, upgrade: 160 }, { dmg: 48, range: 160, rate: 0.4, upgrade: 250 } ],
+    branches: {
+      A: { name: '炼狱', dmg: 80, range: 175, rate: 0.4, splash: 130, dot: 34, dotDur: 3, upgrade: 420, desc: '范围灼烧地狱' },
+      B: { name: '熔火', dmg: 130, range: 165, rate: 0.5, splash: 80, dot: 20, dotDur: 2.5, upgrade: 420, desc: '高爆灼烧' },
+    },
+    bullet: { color: '#ff9333', speed: 360, r: 9 },
+  },
+  arcane: {
+    name: '猫头鹰法师', img: 'tw_arcane_1', cost: 160, attack: 'arcane', unlock: 32,
+    levels: [ { dmg: 55, range: 200, rate: 0.8 }, { dmg: 90, range: 215, rate: 0.75, upgrade: 200 }, { dmg: 140, range: 230, rate: 0.7, upgrade: 320 } ],
+    branches: {
+      A: { name: '虚空', dmg: 260, range: 250, rate: 0.7, upgrade: 520, desc: '无视护甲真伤' },
+      B: { name: '秘法', dmg: 150, range: 260, rate: 0.5, attack: 'arcanechain', chain: 4, chainFalloff: 0.8, upgrade: 520, desc: '奥术连锁' },
+    },
+    bullet: { color: '#c9a0ff', speed: 760, r: 6 },
+  },
+};
+// 解锁顺序（与 unlock 一致，便于商店排序）
+const TOWER_KEYS = ['arrow', 'cannon', 'frost', 'poison', 'lightning', 'sniper', 'flame', 'arcane'];
+
+// 英雄：第 40 关解锁。机动单位，自动靠近攻击附近敌人，点地面下达移动指令
+const HERO = {
+  name: '风暴游侠', img: 'hero_ranger', ranged: true, unlockLevel: 40,
+  dmg: 60, range: 230, rate: 0.35, speed: 160, aggro: 320, crit: 0.3, critMul: 2.2, maxHp: 800,
+  bullet: { color: '#b6ff5a', speed: 760, r: 5 },
+};
+
+/* ---------------- 敌人（随关卡逐步登场） ----------------
+ * armor 减伤(固定值)；fly 飞行；heal 治疗周围；split 死亡分裂；boss 首领。
+ * unlock = 首次出现的关卡。img 暂复用现有怪物美术，后续可加新美术。 */
+const ENEMIES = {
+  // 基础怪（金币普遍下调，靠「数量多」补偿经济）
+  slime:   { name: '史莱姆', img: 'slime',  hp: 34,  speed: 72,  gold: 3,  size: 64,  unlock: 1 },
+  runner:  { name: '疾行虫', img: 'runner', hp: 24,  speed: 122, gold: 3,  size: 56,  unlock: 2 },
+  swarm:   { name: '虫群',   img: 'swarm',  hp: 16,  speed: 98,  gold: 2,  size: 46,  unlock: 3 },
+  bouncer: { name: '弹跳兽', img: 'slime',  hp: 46,  speed: 96,  gold: 3,  size: 60,  unlock: 4 },          // 快血厚史莱姆
+  tank:    { name: '甲壳兽', img: 'tank',   hp: 130, speed: 46,  gold: 8,  size: 78,  armor: 3, unlock: 6 },
+  stinger: { name: '毒刺虫', img: 'runner', hp: 60,  speed: 110, gold: 4,  size: 58,  unlock: 7 },          // 快且有点血
+  flyer:   { name: '飞蝠',   img: 'swarm',  hp: 40,  speed: 130, gold: 4,  size: 50,  fly: true, unlock: 9 },
+  warrunner:{ name: '冲锋虫', img: 'runner', hp: 95, speed: 150, gold: 5,  size: 60,  unlock: 11 },         // 超快冲锋
+  splitter:{ name: '裂解史莱姆', img: 'slime', hp: 70, speed: 70, gold: 5, size: 70, split: 2, unlock: 13 },
+  ironbug: { name: '铁甲虫', img: 'tank',   hp: 170, speed: 58,  gold: 9,  size: 72,  armor: 5, unlock: 16 }, // 中速重甲
+  healer:  { name: '治疗灵', img: 'swarm',  hp: 90,  speed: 80,  gold: 7,  size: 60,  heal: 12, healRange: 110, unlock: 19 },
+  swarmer: { name: '虫潮',   img: 'swarm',  hp: 28,  speed: 112, gold: 1,  size: 42,  unlock: 21 },          // 极廉价大群
+  ghost:   { name: '幽影',   img: 'swarm',  hp: 120, speed: 96,  gold: 6,  size: 58,  fly: true, unlock: 22 }, // 飞行+较厚
+  brute:   { name: '重甲兽', img: 'tank',   hp: 280, speed: 40,  gold: 13, size: 90,  armor: 6, unlock: 24 },
+  juggernaut:{ name: '碾压者', img: 'tank', hp: 460, speed: 50,  gold: 16, size: 96,  armor: 8, unlock: 30 }, // 又快又厚
+  // 首领（基础血量下调 + 按关卡缩放，使「每关都能出 boss」且早期可击破）
+  boss:    { name: '熔岩巨兽', img: 'boss', hp: 320,  speed: 42, gold: 60,  size: 140, armor: 3,  boss: true, unlock: 1 },
+  bossfast:{ name: '狂奔魔像', img: 'boss', hp: 520,  speed: 66, gold: 90,  size: 145, armor: 4,  boss: true, unlock: 10 },
+  bosstank:{ name: '不灭石神', img: 'boss', hp: 1000, speed: 34, gold: 140, size: 160, armor: 9,  boss: true, unlock: 25 },
+};
+
+module.exports = { VW, VH, TOTAL_LEVELS, TOWERS, TOWER_KEYS, HERO, ENEMIES };
