@@ -378,10 +378,14 @@
   function strokePath(w, color) { const p = level.path; ctx.beginPath(); ctx.moveTo(vx(p[0].x), vy(p[0].y)); for (let i = 1; i < p.length; i++) ctx.lineTo(vx(p[i].x), vy(p[i].y)); ctx.lineWidth = vk(w); ctx.strokeStyle = color; ctx.stroke(); }
   function drawPlatform() {
     ctx.lineJoin = 'round'; ctx.lineCap = 'round';
-    ctx.save(); ctx.translate(0, vk(13)); strokePath(74, '#5b4a2c'); ctx.restore();   // 侧壁(厚度)
-    strokePath(72, '#cdb178');     // 底
-    strokePath(64, '#e7d3a0');     // 路面
-    strokePath(60, 'rgba(255,245,210,.35)'); // 高光
+    ctx.save(); ctx.translate(0, vk(11)); strokePath(70, '#b98d63'); ctx.restore();  // 侧壁厚度(暖棕)
+    strokePath(68, '#e9cfa0');     // 底边(浅棕)
+    strokePath(58, '#f6e6c2');     // 路面(奶油)
+    strokePath(50, 'rgba(255,251,238,.55)'); // 柔和高光
+    // 可爱圆点虚线中缝(像小脚印/踏石)
+    const p = level.path; ctx.save(); ctx.setLineDash([vk(3), vk(22)]); ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(vx(p[0].x), vy(p[0].y)); for (let i = 1; i < p.length; i++) ctx.lineTo(vx(p[i].x), vy(p[i].y));
+    ctx.lineWidth = vk(7); ctx.strokeStyle = 'rgba(196,156,102,.5)'; ctx.stroke(); ctx.restore();
   }
   function drawBase() {
     const p = level.path[level.path.length - 1];

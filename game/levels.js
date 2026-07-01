@@ -15,23 +15,43 @@ const THEME_NAME = { grass: '翠绿草原', volcano: '火山峡谷', forest: '�
 
 function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
 
-/* 横屏程序化「阶梯蛇形」路径：从左侧入口蜿蜒到右侧基地。折数随关卡增加。
- * 由游戏绘制成抬升的 3D 平台(保卫萝卜风)，槽位落在平台两侧。 */
-function genPath(level) {
-  // 前几关地图更小更简单，便于新手上手：收窄边界 + 减少折段
-  const early = level <= 3;
-  const mx = early ? 220 : 70, my = early ? 190 : 150;
-  const top = my, bot = VH - (early ? 170 : 130), left = mx, right = VW - (mx + 20), cy = (top + bot) / 2;
-  const runs = level <= 1 ? 2 : level <= 3 ? 2 : level <= 5 ? 3 : clamp(3 + Math.floor((level - 5) / 6), 3, 6);   // 横向段数（前几关更少）
-  const xs = []; for (let i = 0; i <= runs; i++) xs.push(left + (right - left) * i / runs);
-  const pts = [{ x: 66, y: cy }, { x: xs[0], y: bot }];   // 入口内移，避免传送门被左边缘裁切
-  let y = bot;
-  for (let i = 0; i < runs; i++) {
-    pts.push({ x: xs[i + 1], y });                 // 水平段
-    if (i < runs - 1) { y = (y === bot) ? top : bot; pts.push({ x: xs[i + 1], y }); }  // 竖直台阶
+/* 平滑 Catmull-Rom 采样：把控制点插值成密集平滑折线（自动实现蜿蜒曲线 + 怪物顺滑行走）。 */
+function smoothPath(ctrl, perSeg) {
+  if (ctrl.length < 3) return ctrl.slice();
+  const out = [];
+  for (let i = 0; i < ctrl.length - 1; i++) {
+    const p0 = ctrl[i - 1] || ctrl[i], p1 = ctrl[i], p2 = ctrl[i + 1], p3 = ctrl[i + 2] || ctrl[i + 1];
+    for (let s = 0; s < perSeg; s++) {
+      const t = s / perSeg, t2 = t * t, t3 = t2 * t;
+      const x = 0.5 * ((2 * p1.x) + (-p0.x + p2.x) * t + (2 * p0.x - 5 * p1.x + 4 * p2.x - p3.x) * t2 + (-p0.x + 3 * p1.x - 3 * p2.x + p3.x) * t3);
+      const y = 0.5 * ((2 * p1.y) + (-p0.y + p2.y) * t + (2 * p0.y - 5 * p1.y + 4 * p2.y - p3.y) * t2 + (-p0.y + 3 * p1.y - 3 * p2.y + p3.y) * t3);
+      out.push({ x: clamp(x, 40, VW - 40), y: clamp(y, 120, VH - 100) });
+    }
   }
-  pts.push({ x: VW - 70, y });   // 基地内移，避免被右边缘裁切
-  return pts;
+  out.push(ctrl[ctrl.length - 1]);
+  return out;
+}
+
+/* 横屏程序化「蜿蜒曲线」路径：从左侧入口平滑地蛇形到右侧基地。
+ * 前几关：路线短、弯少、起伏小(易上手)；后段：段数多、起伏大、更曲折。
+ * 由游戏绘制成可爱奶油小路，槽位落在小路两侧。 */
+function genPath(level) {
+  const early = level <= 3;
+  const mx = early ? 260 : 70, my = 150;
+  const top = my, bot = VH - (early ? 210 : 120), left = mx, right = VW - (mx + 20), cy = (top + bot) / 2;
+  // 拐弯段数：前几关少，后段随关卡增多，最多 6
+  const runs = level <= 1 ? 2 : level <= 3 ? 2 : level <= 5 ? 3 : clamp(3 + Math.floor((level - 5) / 5), 3, 6);
+  // 起伏幅度：前几关小(0.42)，后段接近满幅(0.95)
+  const ampF = early ? 0.42 : clamp(0.55 + level * 0.018, 0.55, 0.95);
+  const half = (bot - top) / 2 * ampF;
+  const xs = []; for (let i = 0; i <= runs; i++) xs.push(left + (right - left) * i / runs);
+  // 控制点：左入口 → 交替上/下的蛇形站点 → 右基地
+  const ctrl = [{ x: 62, y: cy }];
+  for (let i = 0; i <= runs; i++) ctrl.push({ x: xs[i], y: cy + (i % 2 === 0 ? half : -half) });
+  const lastY = cy + (runs % 2 === 0 ? half : -half);
+  ctrl.push({ x: VW - 62, y: lastY });
+  // 平滑成曲线（前几关采样密度低一点即可）
+  return smoothPath(ctrl, early ? 12 : 16);
 }
 
 function segDist(px, py, a, b) {
