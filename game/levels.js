@@ -21,13 +21,13 @@ function genPath(level) {
   const top = 150, bot = VH - 130, left = 70, right = VW - 90, cy = (top + bot) / 2;
   const runs = clamp(3 + Math.floor((level - 1) / 8), 3, 6);   // 横向段数
   const xs = []; for (let i = 0; i <= runs; i++) xs.push(left + (right - left) * i / runs);
-  const pts = [{ x: 20, y: cy }, { x: xs[0], y: bot }];
+  const pts = [{ x: 66, y: cy }, { x: xs[0], y: bot }];   // 入口内移，避免传送门被左边缘裁切
   let y = bot;
   for (let i = 0; i < runs; i++) {
     pts.push({ x: xs[i + 1], y });                 // 水平段
     if (i < runs - 1) { y = (y === bot) ? top : bot; pts.push({ x: xs[i + 1], y }); }  // 竖直台阶
   }
-  pts.push({ x: VW - 20, y });
+  pts.push({ x: VW - 70, y });   // 基地内移，避免被右边缘裁切
   return pts;
 }
 
