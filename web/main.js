@@ -28,9 +28,10 @@
   const PORTALS = THEMES.map((t) => 'portal_' + t);                       // 8 主题怪物入口传送门
   const BASES = []; for (const t of THEMES) for (let s = 0; s < 3; s++) BASES.push(`base_${t}_${s}`);   // 每主题基地×3态(完好/残破/倒塌)
   const UIIMG = ['ic_play', 'ic_win', 'ic_lose', 'ic_star', 'ic_lock', 'logo_title'];        // 替代 emoji 的图标（Boss来袭用视频，无需 ic_boss）
+  const ENIMG = [...new Set(Object.values(C.ENEMIES).map((e) => e.img))];   // 每种怪的专属立绘 en_<key>
   const towerImg = (t) => `tw_${t.key}_${t.branch ? 3 : t.level + 1}`;   // 按等级取形象
   const IMG = {};
-  await Promise.all([...TW, ...ATKIMG, ...ICONS, ...OBS, 'hero_ranger', 'slime', 'runner', 'tank', 'swarm', 'boss', ...BG, ...PORTALS, ...BASES, ...UIIMG].map((k) => new Promise((r) => { const im = new Image(); im.onload = () => { IMG[k] = im; r(); }; im.onerror = () => r(); im.src = `assets/${k}.png`; })));
+  await Promise.all([...TW, ...ATKIMG, ...ICONS, ...OBS, 'hero_ranger', ...ENIMG, ...BG, ...PORTALS, ...BASES, ...UIIMG].map((k) => new Promise((r) => { const im = new Image(); im.onload = () => { IMG[k] = im; r(); }; im.onerror = () => r(); im.src = `assets/${k}.png`; })));
   // 动画清单(由生成流水线产出): {tag:{asset,frames}}. tag=idle_<key>/atk_<key>. 决定哪些精灵表按帧动画。
   const ATK = {};   // key -> {asset, frames} 攻击动画
   try {
@@ -709,7 +710,7 @@
   const q = new URLSearchParams(location.search), pn = parseInt(q.get('play') || '0', 10);
   if (pn >= 1) { $('loading').style.display = 'none'; startLevel(pn); }
   else if (q.has('shopdbg')) { $('loading').style.display = 'none'; showShop(); }
-  else if (q.has('dexdbg')) { $('loading').style.display = 'none'; showCodex(); }
+  else if (q.has('dexdbg')) { $('loading').style.display = 'none'; showCodex(); const tb = q.get('dexdbg'); if (tb === 'mob' || tb === 'boss') { dexTab = tb; dexSel = 0; renderCodex(); } }
   else if (q.has('homedbg')) { $('loading').style.display = 'none'; showHome(); }
   else if (q.has('demo') || q.has('menudbg') || q.has('solo') || q.has('vfxtest') || q.has('setdbg')) { $('loading').style.display = 'none'; showMenu(); }
   else runLoading(showHome);   // 正常进入：先播加载页，再进首页

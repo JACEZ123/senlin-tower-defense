@@ -104,25 +104,25 @@ const HERO = {
  * unlock = 首次出现的关卡。img 暂复用现有怪物美术，后续可加新美术。 */
 const ENEMIES = {
   // 基础怪（金币普遍下调，靠「数量多」补偿经济）
-  slime:   { name: '史莱姆', img: 'slime',  hp: 34,  speed: 72,  gold: 3,  size: 64,  unlock: 1 },
-  runner:  { name: '疾行虫', img: 'runner', hp: 24,  speed: 122, gold: 3,  size: 56,  unlock: 2 },
-  swarm:   { name: '虫群',   img: 'swarm',  hp: 16,  speed: 98,  gold: 2,  size: 46,  unlock: 3 },
-  bouncer: { name: '弹跳兽', img: 'slime',  hp: 46,  speed: 96,  gold: 3,  size: 60,  unlock: 4 },          // 快血厚史莱姆
-  tank:    { name: '甲壳兽', img: 'tank',   hp: 130, speed: 46,  gold: 8,  size: 78,  armor: 3, unlock: 6 },
-  stinger: { name: '毒刺虫', img: 'runner', hp: 60,  speed: 110, gold: 4,  size: 58,  unlock: 7 },          // 快且有点血
-  flyer:   { name: '飞蝠',   img: 'swarm',  hp: 40,  speed: 130, gold: 4,  size: 50,  fly: true, unlock: 9 },
-  warrunner:{ name: '冲锋虫', img: 'runner', hp: 95, speed: 150, gold: 5,  size: 60,  unlock: 11 },         // 超快冲锋
-  splitter:{ name: '裂解史莱姆', img: 'slime', hp: 70, speed: 70, gold: 5, size: 70, split: 2, unlock: 13 },
-  ironbug: { name: '铁甲虫', img: 'tank',   hp: 170, speed: 58,  gold: 9,  size: 72,  armor: 5, unlock: 16 }, // 中速重甲
-  healer:  { name: '治疗灵', img: 'swarm',  hp: 90,  speed: 80,  gold: 7,  size: 60,  heal: 12, healRange: 110, unlock: 19 },
-  swarmer: { name: '虫潮',   img: 'swarm',  hp: 28,  speed: 112, gold: 1,  size: 42,  unlock: 21 },          // 极廉价大群
-  ghost:   { name: '幽影',   img: 'swarm',  hp: 120, speed: 96,  gold: 6,  size: 58,  fly: true, unlock: 22 }, // 飞行+较厚
-  brute:   { name: '重甲兽', img: 'tank',   hp: 280, speed: 40,  gold: 13, size: 90,  armor: 6, unlock: 24 },
-  juggernaut:{ name: '碾压者', img: 'tank', hp: 460, speed: 50,  gold: 16, size: 96,  armor: 8, unlock: 30 }, // 又快又厚
+  slime:   { name: '史莱姆', img: 'en_slime',  hp: 34,  speed: 72,  gold: 3,  size: 64,  unlock: 1 },
+  runner:  { name: '疾行虫', img: 'en_runner', hp: 24,  speed: 122, gold: 3,  size: 56,  unlock: 2 },
+  swarm:   { name: '虫群',   img: 'en_swarm',  hp: 16,  speed: 98,  gold: 2,  size: 46,  unlock: 3 },
+  bouncer: { name: '弹跳兽', img: 'en_bouncer',  hp: 46,  speed: 96,  gold: 3,  size: 60,  unlock: 4 },          // 快血厚史莱姆
+  tank:    { name: '甲壳兽', img: 'en_tank',   hp: 130, speed: 46,  gold: 8,  size: 78,  armor: 3, unlock: 6 },
+  stinger: { name: '毒刺虫', img: 'en_stinger', hp: 60,  speed: 110, gold: 4,  size: 58,  unlock: 7 },          // 快且有点血
+  flyer:   { name: '飞蝠',   img: 'en_flyer',  hp: 40,  speed: 130, gold: 4,  size: 50,  fly: true, unlock: 9 },
+  warrunner:{ name: '冲锋虫', img: 'en_warrunner', hp: 95, speed: 150, gold: 5,  size: 60,  unlock: 11 },         // 超快冲锋
+  splitter:{ name: '裂解史莱姆', img: 'en_splitter', hp: 70, speed: 70, gold: 5, size: 70, split: 2, unlock: 13 },
+  ironbug: { name: '铁甲虫', img: 'en_ironbug',   hp: 170, speed: 58,  gold: 9,  size: 72,  armor: 5, unlock: 16 }, // 中速重甲
+  healer:  { name: '治疗灵', img: 'en_healer',  hp: 90,  speed: 80,  gold: 7,  size: 60,  heal: 12, healRange: 110, unlock: 19 },
+  swarmer: { name: '虫潮',   img: 'en_swarmer',  hp: 28,  speed: 112, gold: 1,  size: 42,  unlock: 21 },          // 极廉价大群
+  ghost:   { name: '幽影',   img: 'en_ghost',  hp: 120, speed: 96,  gold: 6,  size: 58,  fly: true, unlock: 22 }, // 飞行+较厚
+  brute:   { name: '重甲兽', img: 'en_brute',   hp: 280, speed: 40,  gold: 13, size: 90,  armor: 6, unlock: 24 },
+  juggernaut:{ name: '碾压者', img: 'en_juggernaut', hp: 460, speed: 50,  gold: 16, size: 96,  armor: 8, unlock: 30 }, // 又快又厚
   // 首领（基础血量下调 + 按关卡缩放，使「每关都能出 boss」且早期可击破）
-  boss:    { name: '熔岩巨兽', img: 'boss', hp: 320,  speed: 42, gold: 60,  size: 140, armor: 3,  boss: true, unlock: 1 },
-  bossfast:{ name: '狂奔魔像', img: 'boss', hp: 520,  speed: 66, gold: 90,  size: 145, armor: 4,  boss: true, unlock: 10 },
-  bosstank:{ name: '不灭石神', img: 'boss', hp: 1000, speed: 34, gold: 140, size: 160, armor: 9,  boss: true, unlock: 25 },
+  boss:    { name: '熔岩巨兽', img: 'en_boss', hp: 320,  speed: 42, gold: 60,  size: 140, armor: 3,  boss: true, unlock: 1 },
+  bossfast:{ name: '狂奔魔像', img: 'en_bossfast', hp: 520,  speed: 66, gold: 90,  size: 145, armor: 4,  boss: true, unlock: 10 },
+  bosstank:{ name: '不灭石神', img: 'en_bosstank', hp: 1000, speed: 34, gold: 140, size: 160, armor: 9,  boss: true, unlock: 25 },
 };
 
 module.exports = { VW, VH, TOTAL_LEVELS, TOWERS, TOWER_KEYS, HERO, ENEMIES };
