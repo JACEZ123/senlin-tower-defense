@@ -18,8 +18,11 @@ function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
 /* 横屏程序化「阶梯蛇形」路径：从左侧入口蜿蜒到右侧基地。折数随关卡增加。
  * 由游戏绘制成抬升的 3D 平台(保卫萝卜风)，槽位落在平台两侧。 */
 function genPath(level) {
-  const top = 150, bot = VH - 130, left = 70, right = VW - 90, cy = (top + bot) / 2;
-  const runs = clamp(3 + Math.floor((level - 1) / 8), 3, 6);   // 横向段数
+  // 前几关地图更小更简单，便于新手上手：收窄边界 + 减少折段
+  const early = level <= 3;
+  const mx = early ? 220 : 70, my = early ? 190 : 150;
+  const top = my, bot = VH - (early ? 170 : 130), left = mx, right = VW - (mx + 20), cy = (top + bot) / 2;
+  const runs = level <= 1 ? 2 : level <= 3 ? 2 : level <= 5 ? 3 : clamp(3 + Math.floor((level - 5) / 6), 3, 6);   // 横向段数（前几关更少）
   const xs = []; for (let i = 0; i <= runs; i++) xs.push(left + (right - left) * i / runs);
   const pts = [{ x: 66, y: cy }, { x: xs[0], y: bot }];   // 入口内移，避免传送门被左边缘裁切
   let y = bot;
@@ -128,7 +131,7 @@ function buildLevel(n) {
   // 障碍物：占据部分候选位，击破得金币、腾出可建位。分大/小两类：
   //   大障碍：血厚(打得久)、金币多、占地大；小障碍：血薄(打得快)、金币少、占地小。数量随关卡增加。
   const obTypes = ['ob_rock', 'ob_crystal', 'ob_barrel', 'ob_stump'];
-  const obCount = clamp(4 + Math.floor(n / 3), 4, 11);
+  const obCount = n <= 1 ? 1 : n <= 3 ? 2 : clamp(4 + Math.floor(n / 3), 4, 11);   // 前几关障碍更少
   const obstacles = [];
   for (let i = 0; i < obCount && i < spots.length; i++) {
     const p = spots[Math.floor((i + 0.5) * spots.length / obCount)];

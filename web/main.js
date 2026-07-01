@@ -61,6 +61,11 @@
   const prog = () => { try { return JSON.parse(localStorage.getItem(PKEY)) || { cleared: 0, seen: [] }; } catch { return { cleared: 0, seen: [] }; } };
   const save = (p) => localStorage.setItem(PKEY, JSON.stringify(p));
   const clear = (n) => { const p = prog(); if (n > p.cleared) { p.cleared = n; save(p); } };
+  // 钻石经济：通关获得，商店购买皮肤消费
+  const GKEY = 'wttl_gems';
+  const gems = () => { try { return parseInt(localStorage.getItem(GKEY), 10) || 0; } catch { return 0; } };
+  const setGems = (v) => localStorage.setItem(GKEY, String(Math.max(0, v | 0)));
+  const addGems = (n) => { setGems(gems() + n); return gems(); };
 
   let state = null, level = null, anim = 0, speed = 1, popupSlot = -1, unlockQ = [];
   let baseHitAt = -99, lastLives = null, cutBusy = false, paused = false;   // 基地受击时刻 / 上帧生命 / 过场播放中 / 手动暂停
@@ -92,7 +97,7 @@
       const reached = i * PER + 1 <= p.cleared + 1;      // 该章首关是否已可达
       const d = document.createElement('div');
       d.className = 'chap' + (chapter === i ? ' on' : '') + (reached ? '' : ' lock');
-      d.textContent = (reached ? '' : '🔒 ') + THEME[th];
+      d.innerHTML = (reached ? '' : '<img src="assets/ic_lock.png" onerror="this.style.display=\'none\'" style="width:13px;height:13px;object-fit:contain;vertical-align:middle;margin-right:3px">') + THEME[th];
       if (reached) d.onclick = () => { chapter = i; renderChapters(); renderChapter(); };
       ch.appendChild(d);
     });
@@ -132,11 +137,12 @@
     state = null; grade = ''; hideScreens();
     $('home').style.display = 'block'; $('home').style.backgroundImage = 'url(assets/b_grass.png)';
     const p = prog(); $('hContSub').textContent = '上次进度 · 第 ' + Math.min(40, p.cleared + 1) + ' 关';
+    $('homeGems').textContent = gems();
   }
 
   /* ---------- 商店（守卫外观，展示为主） ---------- */
   let shopSel = 0;
-  function showShop() { hideScreens(); $('shop').style.display = 'block'; renderShop(); }
+  function showShop() { hideScreens(); $('shop').style.display = 'block'; $('shopGems').textContent = gems(); renderShop(); }
   function renderShop() {
     const p = prog(), grid = $('shopGrid'); grid.innerHTML = '';
     C.TOWER_KEYS.forEach((k, i) => {
@@ -180,18 +186,38 @@
     const it = list[dexSel] || list[0], det = $('dexDetail');
     if (!it || !it.un) { det.innerHTML = '<div class="dxdesc" style="margin:auto">未解锁 · 通关更多关卡以收集</div>'; return; }
     if (dexTab === 'guard') {
-      const d = C.TOWERS[it.k];
+      const d = C.TOWERS[it.k], b = d.levels[0], aps = 1 / b.rate;   // 1级基础属性
+      const stats = statBars([
+        ['ic_atk', '攻击', b.dmg, b.dmg / 60, '#ff8a5a'],
+        ['ic_range', '射程', b.range, b.range / 260, '#7ad4f7'],
+        ['ic_speed', '攻速', aps.toFixed(1) + '/s', aps / 3, '#ffd868'],
+      ]);
       det.innerHTML = `<div class="dxcat">防御塔</div><div class="dxname">${d.name}</div>` +
         `<div class="dxtags"><span>${ATKDESC[d.attack] || ''}</span><span>第${d.unlock}关解锁</span><span>造价${d.cost}</span></div>` +
         `<div class="dxevo"><img src="assets/tw_${it.k}_1.png"><span>→</span><img src="assets/tw_${it.k}_2.png"><span>→</span><img src="assets/tw_${it.k}_s3.png"></div>` +
+        stats +
         `<div class="dxdesc">满级二选一专精：「${d.branches.A.name}」${d.branches.A.desc} / 「${d.branches.B.name}」${d.branches.B.desc}</div>`;
     } else {
       const e = C.ENEMIES[it.k];
+      const feats = [e.fly && '飞行', e.split && '分裂', e.heal && '治疗', e.boss && '首领'].filter(Boolean).join(' · ') || '普通';
+      const stats = statBars([
+        ['ic_heart', '血量', e.hp, e.hp / 220, '#ff5a5a'],
+        ['ic_speed', '速度', e.speed, e.speed / 160, '#7ad4f7'],
+        ['ic_def', '护甲', e.armor || 0, (e.armor || 0) / 6, '#9aa6b0'],
+        ['ic_coin', '金币', e.gold, e.gold / 10, '#ffd868'],
+      ]);
       det.innerHTML = `<div class="dxcat">${dexTab === 'boss' ? 'Boss' : '怪物'}</div><div class="dxname">${e.name}</div>` +
-        `<div class="dxtags"><span>血量 ${e.hp}</span><span>速度 ${e.speed}</span>${e.armor ? `<span>护甲 ${e.armor}</span>` : ''}${e.fly ? '<span>飞行</span>' : ''}</div>` +
+        `<div class="dxtags"><span>${feats}</span></div>` +
         `<div class="dxevo"><img src="assets/${e.img}.png" style="width:96px;height:96px"></div>` +
-        `<div class="dxdesc">${dexTab === 'boss' ? '强大的关底首领，血量随关卡提升。' : '沿路径进攻基地的敌人，击杀获得金币。'}</div>`;
+        stats +
+        `<div class="dxdesc">${dexTab === 'boss' ? '强大的关底首领，抵达基地扣 5 点生命；血量随关卡提升。' : '沿路径进攻基地的敌人，抵达基地扣 1 点生命，击杀获得金币。'}</div>`;
     }
+  }
+  function statBars(rows) {   // rows: [iconKey, 标签, 数值, 占比0~1, 颜色]
+    return '<div class="dxstats">' + rows.map(([ic, lb, val, frac, col]) =>
+      `<div class="dxstat"><div class="sl"><img src="assets/${ic}.png" onerror="this.style.display='none'">${lb}</div>` +
+      `<div class="sbarwrap"><div class="sbar" style="width:${Math.max(4, Math.min(100, frac * 100))}%;background:${col}"></div></div>` +
+      `<div class="sv">${val}</div></div>`).join('') + '</div>';
   }
   function startLevel(n) {
     level = LV.buildLevel(n); state = E.createState(level); anim = 0; speed = 1; $('speedNum').textContent = '1';
@@ -452,15 +478,18 @@
       if (s.wave >= 1 && s.phase === 'spawning' && (level.wavePreview(s.wave) || {}).boss) playCut('cut_boss_' + level.theme, 'Boss 来袭', null);
     }
     if (hud.p !== s.phase) {
-      hud.p = s.phase; $('startBtn').style.display = (s.phase === 'ready') ? 'flex' : 'none';
+      hud.p = s.phase;
       if (s.phase === 'won' || s.phase === 'lost') {
-        if (s.phase === 'won') clear(level.id);
+        let reward = 0;
+        if (s.phase === 'won') { const first = level.id > prog().cleared; reward = first ? 10 : 3; addGems(reward); clear(level.id); }
         const showBox = () => {
           $('overlay').style.display = 'flex';
           $('ovT').innerHTML = s.phase === 'won'
             ? '<img class="ovic" src="assets/ic_win.png" onerror="this.style.display=\'none\'"> 过关！'
             : '<img class="ovic" src="assets/ic_lose.png" onerror="this.style.display=\'none\'"> 失败';
-          $('ovS').textContent = s.phase === 'won' ? (level.id >= 40 ? '通关全部 40 关！' : level.name + ' 通关') : '基地被攻破，再试一次';
+          $('ovS').innerHTML = s.phase === 'won'
+            ? (level.id >= 40 ? '通关全部 40 关！' : level.name + ' 通关') + `　<img class="ovic" style="width:18px;height:18px" src="assets/ic_gem.png" onerror="this.style.display='none'"> +${reward}`
+            : '基地被攻破，再试一次';
           $('ovNext').style.display = (s.phase === 'won' && level.id < 40) ? '' : 'none';
         };
         playCut(s.phase === 'won' ? 'cut_win' : 'cut_lose', s.phase === 'won' ? '过关！' : '失败', showBox);
@@ -580,9 +609,9 @@
     const inGame = !!state;                    // 首页也可打开(仅音乐/音效)
     settingsBusy = inGame;                     // 首页打开不需暂停战斗
     paintToggles();
-    $('setTitle').textContent = inGame ? '⏸ 游戏暂停' : '设置';
+    $('setTitle').textContent = inGame ? '游戏暂停' : '设置';
     $('setSub').textContent = inGame ? level.name : '音乐 / 音效';
-    $('setResume').textContent = inGame ? '继续游戏 ▶' : '关闭';
+    $('setResume').textContent = inGame ? '继续游戏' : '关闭';
     $('setRowBtn').style.display = inGame ? 'flex' : 'none';
     $('settings').style.display = 'flex';
   }

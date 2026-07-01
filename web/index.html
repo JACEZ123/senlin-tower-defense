@@ -198,6 +198,13 @@
   .dexDetail .dxevo { display: flex; align-items: center; gap: 5px; }
   .dexDetail .dxevo img { width: 54px; height: 54px; object-fit: contain; background: rgba(0,0,0,.2); border-radius: 12px; }
   .dexDetail .dxevo span { color: #ffe9a8; font-size: 15px; }
+  .dexDetail .dxstats { width: 100%; display: flex; flex-direction: column; gap: 6px; margin: 4px 0 2px; }
+  .dexDetail .dxstat { display: flex; align-items: center; gap: 8px; }
+  .dexDetail .dxstat .sl { display: flex; align-items: center; gap: 4px; width: 62px; font-size: 12px; color: #cfe0d0; font-weight: 700; }
+  .dexDetail .dxstat .sl img { width: 15px; height: 15px; object-fit: contain; }
+  .dexDetail .dxstat .sbarwrap { flex: 1; height: 9px; border-radius: 6px; background: rgba(0,0,0,.35); overflow: hidden; }
+  .dexDetail .dxstat .sbar { height: 100%; border-radius: 6px; }
+  .dexDetail .dxstat .sv { width: 42px; text-align: right; font-size: 12px; color: #ffe9a8; font-weight: 800; }
   .dexDetail .dxdesc { font-size: 12px; color: #b9cbb6; font-weight: 600; text-align: center; line-height: 1.55; }
   .dexRight { flex: 1; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
   .dexTabs { display: flex; gap: 8px; }
@@ -248,16 +255,16 @@
   <div id="settings">
     <div class="scard">
       <div class="sclose" id="setClose">×</div>
-      <div class="stitle" id="setTitle">⏸ 游戏暂停</div>
+      <div class="stitle" id="setTitle">游戏暂停</div>
       <div class="ssub" id="setSub">第 1 关 · 翠绿草原</div>
       <div class="stog">
-        <div class="srow"><div class="lbl">🎵 音乐</div><div class="sw on" id="swMusic"><div class="knob"></div></div></div>
-        <div class="srow"><div class="lbl">🔊 音效</div><div class="sw on" id="swSfx"><div class="knob"></div></div></div>
+        <div class="srow"><div class="lbl"><img src="assets/ic_music.png" onerror="this.style.display='none'" style="width:22px;height:22px;object-fit:contain">音乐</div><div class="sw on" id="swMusic"><div class="knob"></div></div></div>
+        <div class="srow"><div class="lbl"><img src="assets/ic_sfx.png" onerror="this.style.display='none'" style="width:22px;height:22px;object-fit:contain">音效</div><div class="sw on" id="swSfx"><div class="knob"></div></div></div>
       </div>
       <div class="sbtns">
-        <div class="sbig" id="setResume">继续游戏 ▶</div>
+        <div class="sbig" id="setResume">继续游戏</div>
         <div class="srowbtn" id="setRowBtn">
-          <div class="sreplay" id="setReplay">↻ 重玩本关</div>
+          <div class="sreplay" id="setReplay">重玩本关</div>
           <div class="shome" id="setHome">返回选关</div>
         </div>
       </div>
@@ -267,7 +274,7 @@
   <!-- 首页（入口） -->
   <div id="home">
     <div id="homeBar">
-      <div class="pill"><img class="hud-ic" src="assets/ic_coin.png" alt=""> <span id="homeGold">1280</span></div>
+      <div class="pill"><img class="hud-ic" src="assets/ic_gem.png" alt="钻石" onerror="this.style.display='none'"> <span id="homeGems">0</span></div>
     </div>
     <div id="homeMain">
       <div class="hleft">
@@ -286,7 +293,7 @@
 
   <!-- 商店（皮肤） -->
   <div id="shop" class="page">
-    <div class="pgbar"><div class="pgback" id="shopBack">←</div><div class="pgtitle">商店 · 皮肤</div><div class="pill"><img class="hud-ic" src="assets/ic_coin.png" alt=""> <span>1280</span></div></div>
+    <div class="pgbar"><div class="pgback" id="shopBack">←</div><div class="pgtitle">商店 · 皮肤</div><div class="pill"><img class="hud-ic" src="assets/ic_gem.png" alt="钻石" onerror="this.style.display='none'"> <span id="shopGems">0</span></div></div>
     <div class="pgbody">
       <div class="shopPreview" id="shopPreview"></div>
       <div class="shopGrid" id="shopGrid"></div>
@@ -308,7 +315,7 @@
     <img class="ldlogo" src="assets/logo_title.png" alt="森林塔防大作战" onerror="this.style.display='none'">
     <div class="ldsub">40 关塔防 · 8 大主题世界</div>
     <div class="ldbar"><div class="ldtrack"><div class="ldfill" id="ldFill"></div><div class="ldshim"></div><div class="ldpct" id="ldPct">0%</div></div></div>
-    <div class="ldtip">💡 小提示 · 满级守卫可二选一专精分支</div>
+    <div class="ldtip"><img src="assets/ic_tip.png" onerror="this.style.display='none'" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;margin-right:4px">小提示 · 满级守卫可二选一专精分支</div>
     <div class="lddots">加载资源中<i>●</i><i style="animation-delay:.2s">●</i><i style="animation-delay:.4s">●</i></div>
     <div class="ldver">v1.0.0</div>
   </div>
