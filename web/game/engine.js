@@ -294,6 +294,7 @@ function moveEnemies(s, dt) {
 function onDeath(s, e) {
   const g = Math.max(1, Math.round(e.def.gold * (e.goldMul || 1) * (C.BALANCE ? C.BALANCE.GOLD : 1)));   // 前期怪给钱少(goldMul) + 全局经济系数
   s.gold += g; pushFloat(s, e.x, e.y, '+' + g, '#ffd23f');
+  s.effects.push({ kind: 'poof', x: e.x, y: e.y, r: (e.def.size || 60) * 0.6, t: 0, life: 0.45 });   // 死亡烟雾(图片)
   if (e.def.split && !e._splitChild) {
     for (let i = 0; i < e.def.split; i++) {
       const off = (i - (e.def.split - 1) / 2) * 24;

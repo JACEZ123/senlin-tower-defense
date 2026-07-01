@@ -28,11 +28,12 @@
   const PORTALS = THEMES.map((t) => 'portal_' + t);                       // 8 主题怪物入口传送门
   const BASES = []; for (const t of THEMES) for (let s = 0; s < 3; s++) BASES.push(`base_${t}_${s}`);   // 每主题基地×3态(完好/残破/倒塌)
   const UIIMG = ['ic_play', 'ic_win', 'ic_lose', 'ic_star', 'ic_lock', 'logo_title'];        // 替代 emoji 的图标（Boss来袭用视频，无需 ic_boss）
+  const FXIMG = ['fx_burst', 'fx_puff', 'fx_ring', 'fx_magic', 'fx_ice', 'fx_poison', 'fx_zap', 'fx_muzzle', 'fx_poof'];   // 图片化命中/攻击特效精灵
   const CHESTIMG = ['chest_closed', 'ic_hand', 'sign_wood', 'frame_common', 'frame_rare', 'frame_epic', ...C.CHEST_ITEMS.map((it) => it.img)];  // 宝箱/引导美术
   const ENIMG = [...new Set(Object.values(C.ENEMIES).map((e) => e.img))];   // 每种怪的专属立绘 en_<key>
   const towerImg = (t) => `tw_${t.key}_${t.branch ? 3 : t.level + 1}`;   // 按等级取形象
   const IMG = {};
-  await Promise.all([...TW, ...ATKIMG, ...ICONS, ...OBS, 'hero_ranger', ...ENIMG, ...BG, ...PORTALS, ...BASES, ...UIIMG, ...CHESTIMG].map((k) => new Promise((r) => { const im = new Image(); im.onload = () => { IMG[k] = im; r(); }; im.onerror = () => r(); im.src = `assets/${k}.png`; })));
+  await Promise.all([...TW, ...ATKIMG, ...ICONS, ...OBS, 'hero_ranger', ...ENIMG, ...BG, ...PORTALS, ...BASES, ...UIIMG, ...FXIMG, ...CHESTIMG].map((k) => new Promise((r) => { const im = new Image(); im.onload = () => { IMG[k] = im; r(); }; im.onerror = () => r(); im.src = `assets/${k}.png`; })));
   // 动画清单(由生成流水线产出): {tag:{asset,frames}}. tag=idle_<key>/atk_<key>. 决定哪些精灵表按帧动画。
   const ATK = {};   // key -> {asset, frames} 攻击动画
   try {
@@ -427,9 +428,28 @@
     for (let i = 1; i < segs; i++) { const t = i / segs, j = (Math.random() - 0.5) * amp; ctx.lineTo(ax + dx * t + nx * j, ay + dy * t + ny * j); }
     ctx.lineTo(bx, by); ctx.stroke();
   }
+  // 命中/攻击类型 → 生成的特效精灵图。图片化特效(缩放放大+淡出)
+  const FXMAP = { muzzle: 'fx_muzzle', splash: 'fx_puff', burn: 'fx_puff', slow: 'fx_ice', frostnova: 'fx_ice',
+    poison: 'fx_poison', poisonsplash: 'fx_poison', chain: 'fx_zap', chainbolt: 'fx_zap', arcanechain: 'fx_zap',
+    arcane: 'fx_magic', pierce: 'fx_burst', net: 'fx_ring', spark: 'fx_burst', single: 'fx_burst', poof: 'fx_poof' };
+  function blitFx(key, X, Y, size, alpha, rot) {
+    const im = IMG[key]; if (!im) return false;
+    ctx.save(); ctx.globalAlpha = Math.max(0, Math.min(1, alpha)); ctx.translate(X, Y); if (rot) ctx.rotate(rot);
+    ctx.drawImage(im, -size / 2, -size / 2, size, size); ctx.restore(); return true;
+  }
   function drawEffect(e) {
     const k = e.kind, pr = Math.min(1, e.t / e.life), X = vx(e.x), Y = vy(e.y), col = e.color || '#fff';
     ctx.save(); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    // 先叠加图片特效精灵（爆炸/冰霜/毒云/闪电/奥术/命中/死亡烟）——图片化特效
+    const fxk = FXMAP[k] || (k === 'poof' ? 'fx_poof' : null);
+    if (fxk && IMG[fxk]) {
+      const base = k === 'muzzle' ? 30 : k === 'poof' ? 46 : (e.r ? Math.max(46, e.r * 1.6) : 56);
+      const grow = k === 'muzzle' ? (0.7 + pr * 0.5) : (0.5 + pr * 1.1);
+      const fade = k === 'muzzle' ? (1 - pr) : (1 - pr) * (1 - pr) + 0.15 * (1 - pr);
+      const rot = (k === 'muzzle') ? (e.ang || 0) : ((e.x * 7 + e.y) % 6.28);
+      blitFx(fxk, X, Y, vk(base) * grow, Math.min(1, fade * 1.3), rot);
+    }
+    if (k === 'poof') { ctx.restore(); return; }   // 死亡烟：纯图片
     if (k === 'muzzle') {                       // 开火枪口闪光：朝目标方向的星芒 + 亮心
       const a = e.ang || 0, f = 1 - pr;
       ctx.globalAlpha = f;
