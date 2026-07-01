@@ -290,7 +290,8 @@
   }
   function renderCodex() {
     const tabs = [['guard', '守卫'], ['mob', '怪物'], ['boss', 'Boss']], tb = $('dexTabs'); tb.innerHTML = '';
-    tabs.forEach(([id, lbl]) => { const el = document.createElement('div'); el.className = 'dxtab' + (dexTab === id ? ' on' : ''); el.textContent = lbl; el.onclick = () => { dexTab = id; dexSel = 0; renderCodex(); }; tb.appendChild(el); });
+    const TABIMG = { guard: 't_guard', mob: 't_mob', boss: 't_boss' };
+    tabs.forEach(([id, lbl]) => { const el = document.createElement('div'); el.className = 'dxtab' + (dexTab === id ? ' on' : ''); el.innerHTML = `<img class="tlbl" style="height:16px" src="assets/${TABIMG[id]}.png" alt="${lbl}">`; el.onclick = () => { dexTab = id; dexSel = 0; renderCodex(); }; tb.appendChild(el); });
     const list = dexList(), unlocked = list.filter((x) => x.un).length;
     $('dexCount').textContent = `已收集 ${unlocked} / ${list.length}`;
     const grid = $('dexGrid'); grid.innerHTML = '';
@@ -685,8 +686,8 @@
         const showBox = () => {
           $('overlay').style.display = 'flex';
           $('ovT').innerHTML = s.phase === 'won'
-            ? '<img class="ovic" src="assets/ic_win.png" onerror="this.style.display=\'none\'"> 过关！'
-            : '<img class="ovic" src="assets/ic_lose.png" onerror="this.style.display=\'none\'"> 失败';
+            ? '<img class="ovic" src="assets/ic_win.png" onerror="this.style.display=\'none\'"> <img class="tlbl" style="height:30px" src="assets/t_win.png" alt="过关">'
+            : '<img class="ovic" src="assets/ic_lose.png" onerror="this.style.display=\'none\'"> <img class="tlbl" style="height:30px" src="assets/t_lose.png" alt="失败">';
           // 星级条（点亮 stars 颗，共 3 颗）
           const starRow = s.phase === 'won'
             ? `<div class="ovstars">${[1,2,3].map((i)=>`<img src="assets/ic_star.png" class="${i<=stars?'on':'off'}" onerror="this.style.display='none'">`).join('')}</div>`

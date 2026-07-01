@@ -14,6 +14,7 @@
   #bar { position: absolute; top: 8px; left: 10px; right: 10px; height: 44px; display: flex; align-items: center; gap: 8px; z-index: 10; pointer-events: none; }
   .pill { background: url(assets/ui_pill.png) center/100% 100% no-repeat; color: #7a4a12; font-size: 16px; font-weight: 900; padding: 10px 20px; display: flex; align-items: center; gap: 5px; text-shadow: 0 1px 0 rgba(255,250,225,.6); }
   .ni { vertical-align: -0.16em; margin: 0 -0.5px; }   /* 图片数字字形 */
+  .tlbl { object-fit: contain; vertical-align: middle; display: inline-block; }   /* 图片文字标签 */
   #waveWrap { flex: 1; max-width: 360px; margin: 0 auto; background: rgba(20,28,20,.7); border: 2px solid rgba(255,200,90,.45); border-radius: 999px; height: 30px; position: relative; overflow: hidden; }
   #waveFill { position: absolute; left: 0; top: 0; bottom: 0; width: 0%; background: linear-gradient(90deg,#7CFC4D,#3fae2a); transition: width .3s; }
   #waveTxt { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 14px; font-weight: 800; text-shadow: 0 1px 2px rgba(0,0,0,.5); }
@@ -285,7 +286,7 @@
   <div id="bossAlarm"></div>
   <div id="banner"><div class="bncard"><img id="bnGif" alt="" onerror="this.style.display='none'"><div id="bnText"></div></div></div>
   <div id="unlock"><div class="ucard"><div class="uglow"><img id="uImg"></div><div class="un" id="uName"></div><div class="ud" id="uDesc"></div><div class="btn up" id="uOk" style="display:inline-block">知道了</div></div></div>
-  <div id="overlay"><div class="box"><div class="t" id="ovT"></div><div class="s" id="ovS"></div><div class="row"><div class="btn up" id="ovNext">下一关</div><div class="btn sell" id="ovReplay">重玩</div><div class="btn" style="background:#557" id="ovMenu">选关</div></div></div></div>
+  <div id="overlay"><div class="box"><div class="t" id="ovT"></div><div class="s" id="ovS"></div><div class="row"><div class="btn up" id="ovNext"><img class="tlbl" style="height:20px" src="assets/t_next.png" alt="下一关"></div><div class="btn sell" id="ovReplay"><img class="tlbl" style="height:20px" src="assets/t_replay2.png" alt="重玩"></div><div class="btn" style="background:#557" id="ovMenu"><img class="tlbl" style="height:20px" src="assets/t_sel.png" alt="选关"></div></div></div></div>
   <!-- 宝箱开启揭示卡 -->
   <div id="chestReveal"><div class="crCard" id="crCard"><img class="crFrame" id="crFrame" onerror="this.style.display='none'"><img class="crItem" id="crItem" onerror="this.style.display='none'"><div class="crName" id="crName"></div><div class="crDesc" id="crDesc"></div></div></div>
   <!-- 宝箱不足：钻石购买 / 看广告(预留) -->
@@ -326,7 +327,7 @@
   <div id="settings">
     <div class="scard">
       <div class="sclose" id="setClose">×</div>
-      <div class="stitle" id="setTitle">游戏暂停</div>
+      <div class="stitle" id="setTitle"><img class="tlbl" style="height:30px" src="assets/t_pause.png" alt="游戏暂停"></div>
       <div class="ssub" id="setSub">第 1 关 · 翠绿草原</div>
       <div class="stog">
         <div class="srow"><div class="lbl"><img src="assets/ic_music.png" onerror="this.style.display='none'" style="width:22px;height:22px;object-fit:contain">音乐</div><div class="sw on" id="swMusic"><div class="knob"></div></div></div>
@@ -335,10 +336,10 @@
       <div class="sbtns">
         <div class="sbig" id="setResume">继续游戏</div>
         <div class="srowbtn" id="setRowBtn">
-          <div class="sreplay" id="setReplay">重玩本关</div>
-          <div class="shome" id="setHome">返回选关</div>
+          <div class="sreplay" id="setReplay"><img class="tlbl" style="height:20px" src="assets/t_replay.png" alt="重玩本关"></div>
+          <div class="shome" id="setHome"><img class="tlbl" style="height:20px" src="assets/t_backsel.png" alt="返回选关"></div>
         </div>
-        <div class="shomepage" id="setHomePage">返回首页</div>
+        <div class="shomepage" id="setHomePage"><img class="tlbl" style="height:20px" src="assets/t_home.png" alt="返回首页"></div>
       </div>
     </div>
   </div>
@@ -355,17 +356,17 @@
         <img class="hmascot" src="assets/tw_arrow_1.png" alt="" onerror="this.style.display='none'">
       </div>
       <div class="hright">
-        <div class="hbtn hstart" id="hStart">开始游戏</div>
-        <div class="hbtn hcont" id="hCont">继续冒险<div class="hsub" id="hContSub">上次进度 · 第 1 关</div></div>
-        <div class="hbtn hlevels" id="hLevels">关卡选择</div>
-        <div class="hrow3"><div class="hmini" id="hCodex"><img src="assets/ic_codex.png" onerror="this.style.display='none'">图鉴</div><div class="hmini" id="hShop"><img src="assets/ic_shop.png" onerror="this.style.display='none'">商店</div><div class="hmini" id="hSet"><img src="assets/ic_gear.png" onerror="this.style.display='none'">设置</div></div>
+        <div class="hbtn hstart" id="hStart"><img class="tlbl" style="height:32px" src="assets/t_start.png" alt="开始游戏"></div>
+        <div class="hbtn hcont" id="hCont"><img class="tlbl" style="height:30px" src="assets/t_continue.png" alt="继续冒险"><div class="hsub" id="hContSub">上次进度 · 第 1 关</div></div>
+        <div class="hbtn hlevels" id="hLevels"><img class="tlbl" style="height:30px" src="assets/t_levels.png" alt="关卡选择"></div>
+        <div class="hrow3"><div class="hmini" id="hCodex"><img src="assets/ic_codex.png" onerror="this.style.display='none'"><img class="tlbl" style="height:16px" src="assets/t_codex.png" alt="图鉴"></div><div class="hmini" id="hShop"><img src="assets/ic_shop.png" onerror="this.style.display='none'"><img class="tlbl" style="height:16px" src="assets/t_shop.png" alt="商店"></div><div class="hmini" id="hSet"><img src="assets/ic_gear.png" onerror="this.style.display='none'"><img class="tlbl" style="height:16px" src="assets/t_settings.png" alt="设置"></div></div>
       </div>
     </div>
   </div>
 
   <!-- 商店（皮肤） -->
   <div id="shop" class="page">
-    <div class="pgbar"><div class="pgback" id="shopBack">←</div><div class="pgtitle">商店 · 皮肤</div><div class="pill"><img class="hud-ic" src="assets/ic_gem.png" alt="钻石" onerror="this.style.display='none'"> <span id="shopGems">0</span></div></div>
+    <div class="pgbar"><div class="pgback" id="shopBack"></div><div class="pgtitle"><img class="tlbl" style="height:30px" src="assets/t_shoptitle.png" alt="商店"></div><div class="pill"><img class="hud-ic" src="assets/ic_gem.png" alt="钻石" onerror="this.style.display='none'"> <span id="shopGems">0</span></div></div>
     <div class="pgbody">
       <div class="shopPreview" id="shopPreview"></div>
       <div class="shopRight"><div class="shopChars" id="shopChars"></div><div class="shopGrid" id="shopGrid"></div></div>
@@ -374,7 +375,7 @@
 
   <!-- 图鉴 -->
   <div id="codex" class="page">
-    <div class="pgbar"><div class="pgback" id="dexBack">←</div><div class="pgtitle">图鉴</div><div class="pill" id="dexCount">已收集 8 / 24</div></div>
+    <div class="pgbar"><div class="pgback" id="dexBack"></div><div class="pgtitle"><img class="tlbl" style="height:30px" src="assets/t_dextitle.png" alt="图鉴"></div><div class="pill" id="dexCount">已收集 8 / 24</div></div>
     <div class="pgbody">
       <div class="dexDetail" id="dexDetail"></div>
       <div class="dexRight"><div class="dexTabs" id="dexTabs"></div><div class="dexGrid" id="dexGrid"></div></div>
