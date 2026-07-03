@@ -363,8 +363,10 @@
   function drawSprite(key, cx, cy, h, foot, opt) {
     const im = IMG[key]; if (!im) return; const a = ANIM[key]; let sx = 0, sw = im.width, sh = im.height;
     if (a && a.frames > 1) { sw = im.width / a.frames; const fr = (opt && opt.frame != null) ? (opt.frame % a.frames) : (Math.floor(anim * a.fps) % a.frames); sx = fr * sw; }
-    const sq = opt && opt.squash ? opt.squash : 1, H = vk(h) * sq, Wd = vk(h) * (sw / sh) * (opt && opt.flash ? 1.04 : 1);
+    const sq = (opt && opt.squash ? opt.squash : 1) * (opt && opt.blink ? 0.93 : 1);
+    const H = vk(h) * sq, Wd = vk(h) * (sw / sh) * (2 - sq) * (opt && opt.flash ? 1.04 : 1);   // 压扁时略变宽(挤压守恒,更 Q 弹)
     ctx.save(); ctx.filter = (opt && opt.flash) ? 'brightness(2.6) saturate(.4)' : (grade || 'none');
+    if (opt && opt.tilt) { const X = vx(cx), Y = vy(cy); ctx.translate(X, Y); ctx.rotate(opt.tilt); ctx.translate(-X, -Y); }   // 绕脚点左右摇摆
     if (opt && opt.flip) { const X = vx(cx); ctx.translate(X, 0); ctx.scale(-1, 1); ctx.translate(-X, 0); }   // 水平镜像(朝向目标)
     ctx.drawImage(im, sx, 0, sw, sh, vx(cx) - Wd / 2, vy(cy) - H * (foot == null ? 0.82 : foot), Wd, H);
     ctx.restore();
@@ -624,10 +626,23 @@
     // 怪
     for (const e of s.enemies) {
       const h = vk(e.def.size);
-      shadow(e.x, e.y, e.def.size * 0.32);
-      const hitFlash = e.hitT > 0, hp01 = Math.min(1, (e.hitT || 0) / 0.12), squash = hitFlash ? 0.82 : 1;
+      const hitFlash = e.hitT > 0, hp01 = Math.min(1, (e.hitT || 0) / 0.12);
+      // ---- 行走动效：每只怪有自己的相位/频率，走路一蹦一蹦 + 呼吸蠕动 + 左右摇摆 ----
+      const ph = (e.id % 97) * 0.7;                                    // 个体相位
+      const spd01 = Math.min(1.6, (e.def.speed * (e.spMul || 1)) / 90);
+      const wf = (e.def.fly ? 5 : 7 + spd01 * 5);                      // 步频(飞行怪慢漂浮)
+      const cyc = anim * wf + ph;
+      const slowK = e.slowT > 0 ? 0.35 : (e.netT > 0 ? 0 : 1);         // 冰冻/困网时动作放缓/停
+      const hop = e.def.fly
+        ? Math.sin(cyc * 0.6) * e.def.size * 0.10                      // 飞行:上下漂浮
+        : Math.abs(Math.sin(cyc)) * e.def.size * 0.085 * slowK;        // 地面:小跳
+      const knead = 1 + Math.sin(cyc * 2) * 0.055 * slowK;             // 上下蠕动(挤压呼吸)
+      const tilt = Math.sin(cyc) * 0.085 * slowK;                      // 左右摇摆
+      const blink = ((anim * 0.5 + ph) % 3.1) < 0.09;                  // 偶尔眨眼(闭眼一瞬)
+      shadow(e.x, e.y, e.def.size * (0.32 - hop / e.def.size * 0.5));  // 跳起时影子略小
+      const squash = (hitFlash ? 0.82 : 1) * knead;
       const jx = hitFlash ? (((e.id * 53) % 7) - 3) * hp01 * 1.4 : 0;   // 受击抖动(被击退感)
-      drawSprite(e.def.img, e.x + jx, e.y, e.def.size, 0.85, { flash: hitFlash, squash });
+      drawSprite(e.def.img, e.x + jx, e.y - hop, e.def.size, 0.85, { flash: hitFlash, squash, tilt, blink });
       if (hitFlash) {   // 受击冲击：白色星爆 + 扩散环（受击特效更明显）
         const cx2 = vx(e.x), cy2 = vy(e.y) - h * 0.42;
         ctx.save(); ctx.globalAlpha = hp01;

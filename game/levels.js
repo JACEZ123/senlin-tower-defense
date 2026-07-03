@@ -125,9 +125,9 @@ function buildWave(level, w, waveCount) {
   const slowBasics = basics.filter((k) => C.ENEMIES[k].speed <= 100 && C.ENEMIES[k].hp <= 40);
   const pool = (early && slowBasics.length) ? slowBasics : basics;
   const main = pool[rot % pool.length] || 'slime';
-  const mainN = early ? (26 + w * 6) : (18 + Math.round((w - EARLY) * 5.2));
+  const mainN = w === 1 ? 14 : early ? (10 + w * 8) : (18 + Math.round((w - EARLY) * 5.2));   // 波1 轻(开局仅 1 塔)、波2-3 快速爬坡
   push(main, mainN, early ? 0.4 : 0.5);
-  if (pool.length > 1) { const alt = pool[(rot + 2) % pool.length]; push(alt, (early ? 6 : 4) + w, 0.42); }
+  if (pool.length > 1 && w >= 2) { const alt = pool[(rot + 2) % pool.length]; push(alt, (early ? 6 : 4) + w, 0.42); }   // 杂兵第 2 波起
   if (basics.length > 3 && w >= 4) { const alt2 = basics[(Math.floor((w - 1) / 3) + level + 5) % basics.length]; push(alt2, 4 + (w - 3), 0.4); }
   // 重型/治疗（质量）：仅后半段(第4波起)登场，越靠后越多
   if (heavies.length && w >= 4) { const hv = heavies[(w + level) % heavies.length]; push(hv, (w - 3) + (w >= waveCount - 1 ? 2 : 0), 0.85); }
@@ -137,11 +137,11 @@ function buildWave(level, w, waveCount) {
   // Boss：固定第 10 波（末波）末尾登场
   if (w === waveCount) list.push({ type: pickBoss(level), gap: 1.6, boss: true });
   // 强度：血量随关卡/波次爬升；速度前期慢、后期加速
-  const hpMul = (1 + (level - 1) * 0.05) * (1 + (w - 1) * 0.05) * (early ? 0.8 : 1);   // 前 3 波血量缓冲（开局金减半）
+  const hpMul = (1 + (level - 1) * 0.05) * (1 + (w - 1) * 0.05) * (early ? 0.6 : 1);   // 前 3 波血量缓冲（开局金极少,只建得起 1 座塔）
   const baseSp = 1 + Math.min(0.45, (level - 1) * 0.009);
   const waveSp = early ? 0.7 : (w <= 5 ? 0.92 : 1 + Math.min(0.28, (w - 5) * 0.055));   // 前期慢，后期越来越快
   const spMul = baseSp * waveSp;
-  const goldMul = early ? 0.55 : 1;   // 前期怪给钱少
+  const goldMul = early ? 0.8 : 1;   // 前期怪给钱稍多(开局仅 1 塔,靠击杀滚起第 2 座)
   return list.map((e) => e.boss
     ? { type: e.type, gap: e.gap, hpMul: bossHpMul(level), spMul: baseSp, goldMul: 1, boss: true }
     : { type: e.type, gap: e.gap, hpMul, spMul, goldMul });
@@ -187,7 +187,7 @@ function buildLevel(n) {
     theme, bg: 'b_' + theme,
     path, obstacles, maxTowers,
     waveCount,
-    startGold: 110 + n * 3,
+    startGold: 55 + Math.round(n * 1.5),
     startLives: 20,
     towers,
     hero: n >= (C.HERO.unlockLevel || 40),

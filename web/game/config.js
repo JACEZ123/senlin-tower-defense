@@ -14,7 +14,7 @@ const TOTAL_LEVELS = 40;
 /* ---------------- 全局平衡系数（中等偏难调校，集中可调） ----------------
  * TOWER_DMG 塔伤害倍率(<1 更弱) / ENEMY_HP 怪物血量倍率(>1 更厚) /
  * GOLD 经济倍率(击杀/波次/障碍金币，<1 更穷) / SPAWN_GAP 出怪间隔倍率(>1 更不密集)。 */
-const BALANCE = { TOWER_DMG: 0.78, ENEMY_HP: 1.06, GOLD: 0.7, SPAWN_GAP: 3.2 };
+const BALANCE = { TOWER_DMG: 0.72, ENEMY_HP: 1.22, GOLD: 0.6, SPAWN_GAP: 3.2 };
 
 /* ---------------- 防御塔（8 种 + 分支技能树） ----------------
  * 每塔：cost 建造价；levels[] 三级基础升级；branches{A,B} 满级后二选一专精。
@@ -146,7 +146,7 @@ const CHEST_RARITY_WEIGHT = { common: 60, rare: 30, epic: 10 };
 
 /* 运营化调价：建塔略便宜（好起步），升级/分支显著更贵（升级节奏放慢，边打边攒钱）。
  * 只需改这两个系数即可整体调节奏，UI/引擎/出售退款均自动一致。 */
-const COST_MUL = 0.85, UPGRADE_MUL = 1.35;
+const COST_MUL = 0.8, UPGRADE_MUL = 1.35;
 const r5 = (v) => Math.max(5, Math.round(v / 5) * 5);
 for (const k of Object.keys(TOWERS)) {
   const t = TOWERS[k];

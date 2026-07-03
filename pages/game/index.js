@@ -96,7 +96,7 @@ Page({
 
   /* 绘制单位：序列帧精灵表则播放当前帧，否则整图。
    * key=图片键, cx/cy=虚拟坐标, targetH=虚拟目标高, footFrac=锚点(底部贴合比例) */
-  drawSprite(key, cx, cy, targetH, footFrac) {
+  drawSprite(key, cx, cy, targetH, footFrac, opt) {
     const img = this.imgs[key]; if (!img) return;
     const a = ANIM[key];
     let sx = 0, sy = 0, sw = img.width, sh = img.height;
@@ -105,9 +105,17 @@ Page({
       const fi = Math.floor(this.anim * a.fps) % a.frames;
       sx = fi * sw;
     }
-    const h = this.vk(targetH), w = h * (sw / sh);
+    const sq = (opt && opt.squash) || 1;
+    const h = this.vk(targetH) * sq, w = this.vk(targetH) * (sw / sh) * (2 - sq);   // 压扁时略变宽(Q 弹)
     const dx = this.vx(cx) - w / 2, dy = this.vy(cy) - h * (footFrac == null ? 0.82 : footFrac);
-    this.ctx.drawImage(img, sx, sy, sw, sh, dx, dy, w, h);
+    const ctx = this.ctx;
+    if (opt && opt.tilt) {
+      const X = this.vx(cx), Y = this.vy(cy);
+      ctx.save(); ctx.translate(X, Y); ctx.rotate(opt.tilt); ctx.translate(-X, -Y);
+      ctx.drawImage(img, sx, sy, sw, sh, dx, dy, w, h);
+      ctx.restore(); return;
+    }
+    ctx.drawImage(img, sx, sy, sw, sh, dx, dy, w, h);
   },
 
   /* ----------------- 渲染 ----------------- */
@@ -167,7 +175,12 @@ Page({
     for (const e of s.enemies) {
       const h = this.vk(e.def.size);
       if (this.imgs[e.def.img]) {
-        this.drawSprite(e.def.img, e.x, e.y, e.def.size, 0.85);
+        // 行走动效：个体相位的小跳 + 蠕动挤压 + 左右摇摆(飞行怪改为漂浮)
+        const ph = (e.id % 97) * 0.7, wf = e.def.fly ? 5 : 7 + Math.min(1.6, e.def.speed / 90) * 5;
+        const cyc = this.anim * wf + ph, slowK = e.slowT > 0 ? 0.35 : (e.netT > 0 ? 0 : 1);
+        const hop = e.def.fly ? Math.sin(cyc * 0.6) * e.def.size * 0.10 : Math.abs(Math.sin(cyc)) * e.def.size * 0.085 * slowK;
+        const knead = (1 + Math.sin(cyc * 2) * 0.055 * slowK) * (((this.anim * 0.5 + ph) % 3.1) < 0.09 ? 0.93 : 1);
+        this.drawSprite(e.def.img, e.x, e.y - hop, e.def.size, 0.85, { squash: knead, tilt: Math.sin(cyc) * 0.085 * slowK });
       } else {
         ctx.beginPath(); ctx.arc(this.vx(e.x), this.vy(e.y), this.vk(e.def.size * 0.35), 0, Math.PI * 2);
         ctx.fillStyle = '#c0392b'; ctx.fill();
