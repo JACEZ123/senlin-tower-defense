@@ -121,15 +121,15 @@ function buildWave(level, w, waveCount) {
   const early = w <= EARLY;
   // 主力数量：前期就给大量小怪（走得慢、给钱少，用数量施压但不致崩）；后期随波数提量
   const main = basics[(w + level) % basics.length] || 'slime';
-  const mainN = early ? (9 + w * 2) : (6 + Math.round((w - EARLY) * 1.9));
+  const mainN = early ? (13 + w * 3) : (9 + Math.round((w - EARLY) * 2.6));
   push(main, mainN, early ? 0.4 : 0.5);
-  if (basics.length > 1) { const alt = basics[(w + level + 2) % basics.length]; push(alt, (early ? 2 : 1) + Math.floor(w / 3), 0.42); }
-  if (basics.length > 3 && w >= 4) { const alt2 = basics[(w + level + 5) % basics.length]; push(alt2, 1 + Math.floor((w - 3) / 2), 0.4); }
+  if (basics.length > 1) { const alt = basics[(w + level + 2) % basics.length]; push(alt, (early ? 3 : 2) + Math.floor(w / 2), 0.42); }
+  if (basics.length > 3 && w >= 4) { const alt2 = basics[(w + level + 5) % basics.length]; push(alt2, 2 + Math.floor((w - 3) / 2), 0.4); }
   // 重型/治疗（质量）：仅后半段(第4波起)登场，越靠后越多
   if (heavies.length && w >= 4) { const hv = heavies[(w + level) % heavies.length]; push(hv, Math.floor((w - 3) / 2) + (w >= waveCount - 1 ? 1 : 0), 0.85); }
   // 虫潮洪流：每隔几波一大波廉价小怪
   const swk = basics.includes('swarmer') ? 'swarmer' : (basics.includes('swarm') ? 'swarm' : null);
-  if (swk && w % 3 === 0) push(swk, 6 + w, 0.18);
+  if (swk && w % 3 === 0) push(swk, 9 + Math.round(w * 1.5), 0.18);
   // Boss：固定第 10 波（末波）末尾登场
   if (w === waveCount) list.push({ type: pickBoss(level), gap: 1.6, boss: true });
   // 强度：血量随关卡/波次爬升；速度前期慢、后期加速
