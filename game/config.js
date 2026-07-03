@@ -14,7 +14,7 @@ const TOTAL_LEVELS = 40;
 /* ---------------- 全局平衡系数（中等偏难调校，集中可调） ----------------
  * TOWER_DMG 塔伤害倍率(<1 更弱) / ENEMY_HP 怪物血量倍率(>1 更厚) /
  * GOLD 经济倍率(击杀/波次/障碍金币，<1 更穷) / SPAWN_GAP 出怪间隔倍率(>1 更不密集)。 */
-const BALANCE = { TOWER_DMG: 0.78, ENEMY_HP: 1.06, GOLD: 0.7, SPAWN_GAP: 1.6 };
+const BALANCE = { TOWER_DMG: 0.78, ENEMY_HP: 1.06, GOLD: 0.7, SPAWN_GAP: 3.2 };
 
 /* ---------------- 防御塔（8 种 + 分支技能树） ----------------
  * 每塔：cost 建造价；levels[] 三级基础升级；branches{A,B} 满级后二选一专精。

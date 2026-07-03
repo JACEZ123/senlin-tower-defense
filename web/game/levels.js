@@ -120,20 +120,24 @@ function buildWave(level, w, waveCount) {
   const push = (type, n, gap) => { for (let i = 0; i < n; i++) list.push({ type, gap }); };
   const early = w <= EARLY;
   // 主力数量：前期就给大量小怪（走得慢、给钱少，用数量施压但不致崩）；后期随波数提量
-  const main = basics[(w + level) % basics.length] || 'slime';
-  const mainN = early ? (13 + w * 3) : (9 + Math.round((w - EARLY) * 2.6));
+  // 主力物种每 3 波换一种（1-3 波同种、4-6 波换种……）；前 3 波只从慢速怪里选（开局金少，防秒崩）
+  const rot = Math.floor((w - 1) / 3) + level;
+  const slowBasics = basics.filter((k) => C.ENEMIES[k].speed <= 100 && C.ENEMIES[k].hp <= 40);
+  const pool = (early && slowBasics.length) ? slowBasics : basics;
+  const main = pool[rot % pool.length] || 'slime';
+  const mainN = early ? (26 + w * 6) : (18 + Math.round((w - EARLY) * 5.2));
   push(main, mainN, early ? 0.4 : 0.5);
-  if (basics.length > 1) { const alt = basics[(w + level + 2) % basics.length]; push(alt, (early ? 3 : 2) + Math.floor(w / 2), 0.42); }
-  if (basics.length > 3 && w >= 4) { const alt2 = basics[(w + level + 5) % basics.length]; push(alt2, 2 + Math.floor((w - 3) / 2), 0.4); }
+  if (pool.length > 1) { const alt = pool[(rot + 2) % pool.length]; push(alt, (early ? 6 : 4) + w, 0.42); }
+  if (basics.length > 3 && w >= 4) { const alt2 = basics[(Math.floor((w - 1) / 3) + level + 5) % basics.length]; push(alt2, 4 + (w - 3), 0.4); }
   // 重型/治疗（质量）：仅后半段(第4波起)登场，越靠后越多
-  if (heavies.length && w >= 4) { const hv = heavies[(w + level) % heavies.length]; push(hv, Math.floor((w - 3) / 2) + (w >= waveCount - 1 ? 1 : 0), 0.85); }
+  if (heavies.length && w >= 4) { const hv = heavies[(w + level) % heavies.length]; push(hv, (w - 3) + (w >= waveCount - 1 ? 2 : 0), 0.85); }
   // 虫潮洪流：每隔几波一大波廉价小怪
   const swk = basics.includes('swarmer') ? 'swarmer' : (basics.includes('swarm') ? 'swarm' : null);
-  if (swk && w % 3 === 0) push(swk, 9 + Math.round(w * 1.5), 0.18);
+  if (swk && w % 3 === 0) push(swk, 18 + w * 3, 0.18);
   // Boss：固定第 10 波（末波）末尾登场
   if (w === waveCount) list.push({ type: pickBoss(level), gap: 1.6, boss: true });
   // 强度：血量随关卡/波次爬升；速度前期慢、后期加速
-  const hpMul = (1 + (level - 1) * 0.05) * (1 + (w - 1) * 0.05);
+  const hpMul = (1 + (level - 1) * 0.05) * (1 + (w - 1) * 0.05) * (early ? 0.8 : 1);   // 前 3 波血量缓冲（开局金减半）
   const baseSp = 1 + Math.min(0.45, (level - 1) * 0.009);
   const waveSp = early ? 0.7 : (w <= 5 ? 0.92 : 1 + Math.min(0.28, (w - 5) * 0.055));   // 前期慢，后期越来越快
   const spMul = baseSp * waveSp;
@@ -148,7 +152,10 @@ function wavePreview(level, w, waveCount) {
   if (w > waveCount) return null;
   const basics = unlockedOf(BASIC, level);
   if (w === waveCount) { const b = pickBoss(level); return { name: C.ENEMIES[b].name, boss: true }; }
-  const main = basics[(w + level) % basics.length] || 'slime';
+  const rot = Math.floor((w - 1) / 3) + level;
+  const slowBasics = basics.filter((k) => C.ENEMIES[k].speed <= 100 && C.ENEMIES[k].hp <= 40);
+  const pool = (w <= EARLY && slowBasics.length) ? slowBasics : basics;
+  const main = pool[rot % pool.length] || 'slime';
   return { name: C.ENEMIES[main].name, boss: false };
 }
 
@@ -180,7 +187,7 @@ function buildLevel(n) {
     theme, bg: 'b_' + theme,
     path, obstacles, maxTowers,
     waveCount,
-    startGold: 220 + n * 6,
+    startGold: 110 + n * 3,
     startLives: 20,
     towers,
     hero: n >= (C.HERO.unlockLevel || 40),

@@ -45,7 +45,7 @@ function runLevel(n) {
   const level = LV.buildLevel(n);
   const state = E.createState(level);
   let t = 0, peak = 0, maxBullets = 0;
-  const DT = 1 / 30, MAXT = 600;
+  const DT = 1 / 30, MAXT = 2400;
   // 开局布防
   autoPlay(state, level);
   while (state.phase !== 'won' && state.phase !== 'lost' && t < MAXT) {
