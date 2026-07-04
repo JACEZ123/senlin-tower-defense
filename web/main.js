@@ -780,7 +780,7 @@
     return a;
   }
   function openBuild(x, y) {
-    const items = level.towers.map((k) => { const d = C.TOWERS[k]; return { img: `tw_${k}_1`, sub: '' + d.cost, coin: true, enabled: state.gold >= d.cost, act: () => E.applyCommand(state, { type: 'build', x, y, tower: k }) && closeMenu() }; });
+    const items = level.towers.map((k) => { const d = C.TOWERS[k]; return { img: `tw_${k}_1`, sub: '' + d.cost, coin: true, cost: d.cost, act: () => E.applyCommand(state, { type: 'build', x, y, tower: k }) && closeMenu() }; });
     menu = { mode: 'build', x, y, items, ang: layout(items.length, x, y) };
   }
   function openManage(t) {
