@@ -20,6 +20,7 @@ const OUT = 'web/assets/audio'; fs.mkdirSync(OUT, { recursive: true });
 const ITEMS = [
   { id: 'bgm_main', type: 'music', secs: 120, prompt: '休闲娱乐小游戏背景音效,无人声,无哼唱,轻松欢快' },
   { id: 'bgm_boss', type: 'music', secs: 120, prompt: '休闲娱乐小游戏背景音效,无人声,无哼唱,轻松欢快,稍紧张的Boss战版本' },
+  { id: 'spawn_horn', type: 'sfx', secs: 3, prompt: '小程序游戏,怪物出场,小号乐器,战争号角,无人声,无哼唱' },
   { id: 'wave',     type: 'sfx', secs: 3, prompt: '纯音乐音效,游戏波次开始的短促上扬小号信号音,无人声,无歌词,无数拍,无哼唱' },
   { id: 'boss',     type: 'sfx', secs: 5, prompt: '纯音乐音效,巨兽出场的低沉号角与战鼓,威胁感,无人声,无歌词,无数拍,无哼唱' },
   { id: 'spawn_boss', type: 'sfx', secs: 4, prompt: '纯音效,低沉轰鸣与战鼓,巨物登场压迫感,无人声,无歌词,无数拍,无哼唱' },

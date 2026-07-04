@@ -787,13 +787,14 @@
     E.applyCommand(state, { type: 'select', id: t.id });
     const d = C.TOWERS[t.key], maxed = t.level === d.levels.length - 1; let spent = d.cost; for (let k = 1; k <= t.level; k++) spent += d.levels[k].upgrade; if (t.branch) spent += d.branches[t.branch].upgrade;
     const refund = Math.floor(spent * .6), items = [];
-    if (!t.branch && !maxed) { const nx = d.levels[t.level + 1]; items.push({ icon: 'ic_upgrade', sub: '' + nx.upgrade, coin: true, enabled: state.gold >= nx.upgrade, act: () => { E.applyCommand(state, { type: 'upgrade', id: t.id }); openManage(t); } }); }
+    // cost 字段:enabled 每帧按 state.gold 实时判断(见 drawMenu/点击),不再开菜单时定死
+    if (!t.branch && !maxed) { const nx = d.levels[t.level + 1]; items.push({ icon: 'ic_upgrade', sub: '' + nx.upgrade, coin: true, cost: nx.upgrade, act: () => { E.applyCommand(state, { type: 'upgrade', id: t.id }); openManage(t); } }); }
     else if (!t.branch && maxed) {
       const A = d.branches.A, B = d.branches.B;
-      items.push({ icon: 'ic_branchA', sub: A.name, enabled: state.gold >= A.upgrade, act: () => { E.applyCommand(state, { type: 'branch', id: t.id, branch: 'A' }); closeMenu(); } });
-      items.push({ icon: 'ic_branchB', sub: B.name, enabled: state.gold >= B.upgrade, act: () => { E.applyCommand(state, { type: 'branch', id: t.id, branch: 'B' }); closeMenu(); } });
+      items.push({ icon: 'ic_branchA', name: A.name, sub: '' + A.upgrade, coin: true, cost: A.upgrade, act: () => { E.applyCommand(state, { type: 'branch', id: t.id, branch: 'A' }); closeMenu(); } });
+      items.push({ icon: 'ic_branchB', name: B.name, sub: '' + B.upgrade, coin: true, cost: B.upgrade, act: () => { E.applyCommand(state, { type: 'branch', id: t.id, branch: 'B' }); closeMenu(); } });
     }
-    items.push({ icon: 'ic_sell', sub: '+' + refund, enabled: true, act: () => { E.applyCommand(state, { type: 'sell', id: t.id }); closeMenu(); } });
+    items.push({ icon: 'ic_sell', sub: '+' + refund, cost: 0, act: () => { E.applyCommand(state, { type: 'sell', id: t.id }); closeMenu(); } });
     menu = { mode: 'manage', x: t.x, y: t.y, items, ang: layout(items.length, t.x, t.y) };
   }
   function closeMenu() { menu = null; if (state) E.applyCommand(state, { type: 'select', id: 0 }); }
@@ -802,8 +803,14 @@
     if (!menu) return;
     for (let i = 0; i < menu.items.length; i++) {
       const it = menu.items[i], p = menuItemPos(i), X = vx(p.x), Y = vy(p.y), R = vk(ICON);
-      ctx.beginPath(); ctx.arc(X, Y, R + vk(3), 0, 7); ctx.fillStyle = it.enabled ? 'rgba(28,38,28,.92)' : 'rgba(40,40,40,.8)'; ctx.fill(); ctx.lineWidth = vk(2); ctx.strokeStyle = it.enabled ? '#ffd23f' : '#777'; ctx.stroke();
-      const im = IMG[it.icon || it.img]; if (im) { ctx.save(); if (!it.enabled) ctx.globalAlpha = 0.45; const w = R * 1.7 * (im.width / im.height > 1 ? 1 : im.width / im.height), h = R * 1.7 * (im.height / im.width > 1 ? 1 : im.height / im.width); ctx.drawImage(im, X - w / 2, Y - h / 2 - vk(3), w, h); ctx.restore(); }
+      const enabled = state.gold >= (it.cost || 0);   // 实时判断:金币够了立刻点亮
+      ctx.beginPath(); ctx.arc(X, Y, R + vk(3), 0, 7); ctx.fillStyle = enabled ? 'rgba(28,38,28,.92)' : 'rgba(40,40,40,.8)'; ctx.fill(); ctx.lineWidth = vk(2); ctx.strokeStyle = enabled ? '#ffd23f' : '#777'; ctx.stroke();
+      const im = IMG[it.icon || it.img]; if (im) { ctx.save(); if (!enabled) ctx.globalAlpha = 0.45; const w = R * 1.7 * (im.width / im.height > 1 ? 1 : im.width / im.height), h = R * 1.7 * (im.height / im.width > 1 ? 1 : im.height / im.width); ctx.drawImage(im, X - w / 2, Y - h / 2 - vk(3), w, h); ctx.restore(); }
+      if (it.name) {   // 分支名(图标上方)
+        ctx.font = `bold ${vk(11)}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+        ctx.fillStyle = enabled ? '#ffe9a8' : '#aaa'; ctx.strokeStyle = 'rgba(0,0,0,.7)'; ctx.lineWidth = vk(3);
+        ctx.strokeText(it.name, X, Y - R - vk(4)); ctx.fillText(it.name, X, Y - R - vk(4));
+      }
       if (it.sub) {
         ctx.font = `bold ${vk(12)}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
         const ty = Y + R - vk(1), tw = ctx.measureText(it.sub).width, off = it.coin ? vk(6) : 0;
@@ -885,7 +892,7 @@
       return;
     }
     if (menu) {   // 菜单打开：命中图标执行；点中心或外部关闭
-      for (let i = 0; i < menu.items.length; i++) { const p = menuItemPos(i); if (Math.hypot(v.x - p.x, v.y - p.y) < ICON + 6) { if (menu.items[i].enabled) menu.items[i].act(); return; } }
+      for (let i = 0; i < menu.items.length; i++) { const p = menuItemPos(i); if (Math.hypot(v.x - p.x, v.y - p.y) < ICON + 6) { const it = menu.items[i]; if (state.gold >= (it.cost || 0)) it.act(); return; } }
       closeMenu(); return;
     }
     // 点金币堆 → 拾取(加当前金币25%，堆消失)

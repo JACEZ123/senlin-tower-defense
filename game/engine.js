@@ -20,7 +20,7 @@ function createState(level) {
     spawnQueue: [], spawnTimer: 0, _eid: 1, _tid: 1, healTick: 0,
     nextTimer: 8, firstDelay: 8, betweenDelay: 6,   // 自动出怪倒计时
     effects: [], focusId: 0,                         // 命中特效 / 集火目标
-    sounds: [],                                      // 声音事件队列(渲染端每帧消费;无消费者时封顶不增长)
+    sounds: [], _hornPlayed: false,                  // 声音事件队列 / 第一波出怪号角只响一次
     obstacles: (level.obstacles || []).map((o, i) => ({ id: 9000 + i, x: o.x, y: o.y, type: o.type, hp: o.hp, maxHp: o.hp, gold: o.gold, big: !!o.big, sizeScale: o.sizeScale || 1 })),
     chests: [], _cid: 1,                             // 已放置的宝箱（道具）
     maxTowers: level.maxTowers, selectedId: 0,
@@ -251,8 +251,9 @@ function update(s, dt) {
     s.spawnTimer -= dt;
     if (s.spawnTimer <= 0 && s.spawnQueue.length) {
       const it = s.spawnQueue.shift(); spawnEnemy(s, it);
-      const d = C.ENEMIES[it.type], fam = it.boss ? 'spawn_boss' : d.fly ? 'spawn_fly' : d.armor ? 'spawn_heavy' : (d.speed > 100 ? 'spawn_fast' : 'spawn_normal');
-      if (s._seenTypes && !s._seenTypes[fam]) { s._seenTypes[fam] = 1; snd(s, fam); }   // 每波每家族只响一次
+      // 出怪号角:只在第一波开场 + Boss 出场时响一次(其余怪安静出场)
+      if (it.boss) snd(s, 'spawn_horn');
+      else if (s.wave === 1 && !s._hornPlayed) { s._hornPlayed = true; snd(s, 'spawn_horn'); }
       s.spawnTimer = it.gap * (C.BALANCE ? C.BALANCE.SPAWN_GAP : 1);
     }
     if (!s.spawnQueue.length) s.phase = 'fighting';

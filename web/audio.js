@@ -7,7 +7,7 @@ window.SND = (function () {
   let ctx = null, master = null, muted = false, bgmEl = null, bgmName = '';
   // 音量/开关(由设置面板通过 config() 控制;默认音乐 30%、音效 27%)
   let musicOn = true, sfxOn = true, musicVol = 0.30, sfxVol = 0.27;
-  const sfxGain = () => 0.5 * sfxVol, bgmVol = () => 0.35 * musicVol;
+  const sfxGain = () => 0.25 * sfxVol, bgmVol = () => 0.35 * musicVol;
   const buffers = {};          // 已加载的 mp3 → AudioBuffer
   const lastPlay = {};         // 限频
   try { muted = localStorage.getItem('wttl_mute') === '1'; } catch (e) {}
@@ -65,6 +65,7 @@ window.SND = (function () {
     leak:           () => { tone(240, 240, 0.09, 'square', 0.16); tone(180, 180, 0.12, 'square', 0.16, 0.11); },
     wave:           () => arp([330, 392, 494], 0.09, 0.22, 'triangle', 0.14),
     boss:           () => { tone(110, 98, 0.7, 'sawtooth', 0.20); tone(55, 49, 0.7, 'sawtooth', 0.16, 0.05); noise(0.5, 0.08, 400, 100, 0.1); },
+    spawn_horn:     () => { tone(392, 392, 0.5, 'sawtooth', 0.14); tone(523, 523, 0.6, 'sawtooth', 0.13, 0.25); tone(659, 659, 0.9, 'sawtooth', 0.14, 0.55); },   // 战争号角(缺文件时的合成兜底)
     waveclear:      () => arp([523, 659, 784], 0.07, 0.18, 'triangle', 0.12),
     spawn_normal:   () => tone(500, 700, 0.08, 'triangle', 0.08),
     spawn_fast:     () => tone(800, 1400, 0.10, 'triangle', 0.08),
