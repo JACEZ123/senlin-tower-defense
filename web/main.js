@@ -174,6 +174,7 @@
   }
   function showMenu() {
     state = null; grade = ''; cv.style.filter = ''; hideScreens(); $('menu').style.display = 'flex';
+    if (window.SND) SND.bgm('main');   // 选关页也放背景音乐
     const p = prog(); chapter = Math.min(GROUPS.length - 1, Math.floor(Math.min(p.cleared, 39) / PER));   // 默认打开当前进度所在章
     renderChapters(); renderChapter();
   }
@@ -221,6 +222,7 @@
   function hideScreens() { for (const id of ['menu', 'home', 'shop', 'codex', 'settings', 'overlay', 'popup']) $(id).style.display = 'none'; updateChestBtn(); }
   function showHome() {
     state = null; grade = ''; cv.style.filter = ''; hideScreens();
+    if (window.SND) SND.bgm('main');   // 首页即播背景音乐(首次点击后出声)
     $('home').style.display = 'block'; $('home').style.backgroundImage = 'url(assets/bg_home.png)';
     const p = prog(); $('hContSub').textContent = '上次进度 · 第 ' + Math.min(40, p.cleared + 1) + ' 关';
     setNum('homeGems', gems(), 22);

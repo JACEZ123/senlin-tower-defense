@@ -10,7 +10,7 @@ window.SND = (function () {
   try { muted = localStorage.getItem('wttl_mute') === '1'; } catch (e) {}
 
   function ac() {
-    if (!ctx) { ctx = new (window.AudioContext || window.webkitAudioContext)(); master = ctx.createGain(); master.gain.value = 0.5; master.connect(ctx.destination); }
+    if (!ctx) { ctx = new (window.AudioContext || window.webkitAudioContext)(); master = ctx.createGain(); master.gain.value = 0.25; master.connect(ctx.destination); }
     if (ctx.state === 'suspended') ctx.resume();
     return ctx;
   }
@@ -90,7 +90,9 @@ window.SND = (function () {
     lastPlay[name] = now;
     try {
       fileBuf(name, (buf) => {
-        if (buf) { const c = ac(), src = c.createBufferSource(); src.buffer = buf; const g = c.createGain(); g.gain.value = 0.8; src.connect(g); g.connect(master); src.start(); }
+        if (buf) { const c = ac(), src = c.createBufferSource(); src.buffer = buf; const g = c.createGain();
+          const t0 = c.currentTime; g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(0.8, t0 + 0.03);   // 淡入防爆音(文件尾部已在生成时淡出)
+          src.connect(g); g.connect(master); src.start(t0); }
         else if (RECIPES[name]) RECIPES[name]();
       });
     } catch (e) {}
@@ -99,14 +101,24 @@ window.SND = (function () {
 
   // ---------- BGM(仅文件,MiniMax 生成后自动生效) ----------
   function tryBgm() { if (bgmName) bgm(bgmName); }
-  function bgm(name) {                       // bgm('main') / bgm('boss') / bgm(null) 停
+  const BGM_VOL = 0.18;                      // 初始音量(原 0.35 的一半)
+  function fadeEl(el, to, ms, done) {        // <audio> 音量线性渐变
+    const from = el.volume, t0 = performance.now();
+    (function step() {
+      if (!el.parentNode && el.paused && to > 0) return;
+      const k = Math.min(1, (performance.now() - t0) / ms);
+      el.volume = from + (to - from) * k;
+      if (k < 1) requestAnimationFrame(step); else if (done) done();
+    })();
+  }
+  function bgm(name) {                       // bgm('main') / bgm('boss') / bgm(null) 停;切换带淡入淡出
     bgmName = name;
-    if (!name || muted) { if (bgmEl) { bgmEl.pause(); bgmEl = null; } return; }
-    const src = `assets/audio/bgm_${name}.mp3`;
+    if (!name || muted) { if (bgmEl) { const old = bgmEl; bgmEl = null; fadeEl(old, 0, 500, () => old.pause()); } return; }
     if (bgmEl && bgmEl.dataset.name === name) return;
-    if (bgmEl) bgmEl.pause();
-    bgmEl = new Audio(src); bgmEl.dataset.name = name; bgmEl.loop = true; bgmEl.volume = 0.35;
-    bgmEl.play().catch(() => { bgmEl = null; });   // 文件不存在/未解锁则静默
+    if (bgmEl) { const old = bgmEl; fadeEl(old, 0, 600, () => old.pause()); }   // 旧曲淡出
+    bgmEl = new Audio(`assets/audio/bgm_${name}.mp3`); bgmEl.dataset.name = name; bgmEl.loop = true; bgmEl.volume = 0;
+    const el = bgmEl;
+    el.play().then(() => fadeEl(el, BGM_VOL, 900)).catch(() => { if (bgmEl === el) bgmEl = null; });   // 新曲淡入;未解锁则静默
   }
   function setMuted(m) { muted = m; try { localStorage.setItem('wttl_mute', m ? '1' : '0'); } catch (e) {} if (m && bgmEl) { bgmEl.pause(); bgmEl = null; } else if (!m) tryBgm(); }
   return { play, consume, bgm, setMuted, isMuted: () => muted };

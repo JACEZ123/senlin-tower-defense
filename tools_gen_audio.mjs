@@ -20,12 +20,12 @@ const OUT = 'web/assets/audio'; fs.mkdirSync(OUT, { recursive: true });
 const ITEMS = [
   { id: 'bgm_main', type: 'music', secs: 120, prompt: '纯音乐,电子音乐,欢快,无人声,轻松纯音乐' },
   { id: 'bgm_boss', type: 'music', secs: 120, prompt: '纯音乐,电子音乐,紧张激烈,无人声,Boss战斗纯音乐' },
-  { id: 'wave',     type: 'sfx', secs: 3, prompt: '游戏波次开始号角,短促上扬的小号信号音,单音效' },
-  { id: 'boss',     type: 'sfx', secs: 5, prompt: '巨兽出场低沉号角与战鼓,威胁感,单音效' },
-  { id: 'spawn_boss', type: 'sfx', secs: 4, prompt: '巨大怪物咆哮低吼,单音效' },
-  { id: 'win',      type: 'sfx', secs: 6, prompt: '关卡胜利欢快小号凯旋乐句,可爱游戏风,单音效' },
-  { id: 'lose',     type: 'sfx', secs: 6, prompt: '关卡失败悲伤下行长号乐句,卡通风,单音效' },
-  { id: 'die_boss', type: 'sfx', secs: 4, prompt: '巨大爆炸伴随怪物倒地轰响,单音效' },
+  { id: 'wave',     type: 'sfx', secs: 3, prompt: '纯音乐音效,游戏波次开始的短促上扬小号信号音,无人声,无歌词,无数拍,无哼唱' },
+  { id: 'boss',     type: 'sfx', secs: 5, prompt: '纯音乐音效,巨兽出场的低沉号角与战鼓,威胁感,无人声,无歌词,无数拍,无哼唱' },
+  { id: 'spawn_boss', type: 'sfx', secs: 4, prompt: '纯音效,低沉轰鸣与战鼓,巨物登场压迫感,无人声,无歌词,无数拍,无哼唱' },
+  { id: 'win',      type: 'sfx', secs: 6, prompt: '纯音乐音效,欢快小号凯旋短乐句,可爱游戏胜利,无人声,无歌词,无数拍,无哼唱' },
+  { id: 'lose',     type: 'sfx', secs: 5, prompt: '纯音乐音效,悲伤下行长号短乐句,卡通游戏失败,无人声,无歌词,无数拍,无哼唱' },
+  { id: 'die_boss', type: 'sfx', secs: 4, prompt: '纯音效,巨大爆炸轰响与低音冲击,无人声,无歌词,无数拍,无哼唱' },
 ];
 
 async function genMusic(item) {
@@ -62,8 +62,8 @@ for (const item of ITEMS) {
       void body;
     } else {
       // 音效:截短 + 尾部淡出 + 响度统一
-      execFileSync('ffmpeg', ['-y', '-v', 'error', '-i', rawf, '-t', String(item.secs),
-        '-af', `afade=t=out:st=${Math.max(0, item.secs - 0.8)}:d=0.8,loudnorm=I=-18`, out]);
+      execFileSync('ffmpeg', ['-y', '-v', 'error', '-i', rawf,
+        '-af', `silenceremove=start_periods=1:start_threshold=-40dB,atrim=0:${item.secs},afade=t=out:st=${Math.max(0, item.secs - 0.8)}:d=0.8,loudnorm=I=-18`, out]);
     }
     fs.unlinkSync(rawf);
     console.log(`${item.id} OK (${(fs.statSync(out).size / 1024).toFixed(0)}KB, ${item.secs}s)`);
