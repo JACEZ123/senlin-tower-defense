@@ -147,11 +147,12 @@ const CHEST_RARITY_WEIGHT = { common: 60, rare: 30, epic: 10 };
 /* 运营化调价：建塔略便宜（好起步），升级/分支显著更贵（升级节奏放慢，边打边攒钱）。
  * 只需改这两个系数即可整体调节奏，UI/引擎/出售退款均自动一致。 */
 const COST_MUL = 0.8, UPGRADE_MUL = 1.35;
+const RANGE_GROW = [1, 1.12, 1.24];   // 升级时射程适度扩大(最多比基础大 ~1/4,不失控)
 const r5 = (v) => Math.max(5, Math.round(v / 5) * 5);
 for (const k of Object.keys(TOWERS)) {
   const t = TOWERS[k];
   t.cost = r5(t.cost * COST_MUL);
-  for (const lv of t.levels) if (lv.upgrade) lv.upgrade = r5(lv.upgrade * UPGRADE_MUL);
+  t.levels.forEach((lv, i) => { lv.range = Math.round(Math.max(lv.range, t.levels[0].range * RANGE_GROW[i])); if (lv.upgrade) lv.upgrade = r5(lv.upgrade * UPGRADE_MUL); });
   for (const b of Object.values(t.branches)) b.upgrade = r5(b.upgrade * UPGRADE_MUL);
 }
 

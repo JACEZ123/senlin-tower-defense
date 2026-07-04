@@ -338,8 +338,9 @@ function runTowers(s, dt) {
   for (const t of s.towers) {
     const st = towerStats(t);
     t.cd -= dt;
-    let target = pickTarget(s, t.x, t.y, st.range);
-    if (!target) target = pickObstacle(s, t.x, t.y, st.range);   // 仅当玩家点选了某障碍物时才打它
+    // 集火障碍物优先于打怪:点选障碍物=「这波顶得住,先拆资源点拿启动资金」,再点一次取消恢复打怪
+    let target = pickObstacle(s, t.x, t.y, st.range);
+    if (!target) target = pickTarget(s, t.x, t.y, st.range);
     if (target) t.angle = Math.atan2(target.y - t.y, target.x - t.x);
     if (target && t.cd <= 0) { t.cd = st.rate / (t.hasteMul || 1); fire(s, t.x, t.y - 18, target, st); }   // 疾速光环缩短冷却
   }
