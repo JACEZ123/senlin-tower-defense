@@ -944,10 +944,12 @@
 
   /* ---------- 设置 / 暂停面板 ---------- */
   const AKEY = 'wttl_audio';
-  const audio = (() => { try { return JSON.parse(localStorage.getItem(AKEY)) || { music: true, sfx: true }; } catch { return { music: true, sfx: true }; } })();
+  const audio = (() => { try { return Object.assign({ music: true, sfx: true, musicVol: 30, sfxVol: 27 }, JSON.parse(localStorage.getItem(AKEY)) || {}); } catch { return { music: true, sfx: true, musicVol: 30, sfxVol: 27 }; } })();
+  const applyAudio = () => { if (window.SND) SND.config({ musicOn: audio.music, sfxOn: audio.sfx, musicVol: audio.musicVol / 100, sfxVol: audio.sfxVol / 100 }); };
+  applyAudio();
   const saveAudio = () => localStorage.setItem(AKEY, JSON.stringify(audio));
   let settingsBusy = false;
-  function paintToggles() { $('swMusic').className = 'sw' + (audio.music ? ' on' : ''); $('swSfx').className = 'sw' + (audio.sfx ? ' on' : ''); }
+  function paintToggles() { $('swMusic').className = 'sw' + (audio.music ? ' on' : ''); $('swSfx').className = 'sw' + (audio.sfx ? ' on' : ''); $('volMusic').value = audio.musicVol; $('volSfx').value = audio.sfxVol; }
   function openSettings() {
     const inGame = !!state;                    // 首页也可打开(仅音乐/音效)
     settingsBusy = inGame;                     // 首页打开不需暂停战斗
@@ -959,8 +961,10 @@
     $('settings').style.display = 'flex';
   }
   function closeSettings() { settingsBusy = false; $('settings').style.display = 'none'; }
-  $('swMusic').onclick = () => { audio.music = !audio.music; saveAudio(); paintToggles(); };
-  $('swSfx').onclick = () => { audio.sfx = !audio.sfx; saveAudio(); paintToggles(); };
+  $('swMusic').onclick = () => { audio.music = !audio.music; saveAudio(); paintToggles(); applyAudio(); };
+  $('swSfx').onclick = () => { audio.sfx = !audio.sfx; saveAudio(); paintToggles(); applyAudio(); };
+  $('volMusic').oninput = () => { audio.musicVol = +$('volMusic').value; saveAudio(); applyAudio(); };
+  $('volSfx').oninput = () => { audio.sfxVol = +$('volSfx').value; saveAudio(); applyAudio(); if (window.SND) SND.play('coin'); };   // 拖动即试听
   $('setClose').onclick = closeSettings; $('setResume').onclick = closeSettings;
   $('setReplay').onclick = () => { closeSettings(); startLevel(level.id); };
   $('setHome').onclick = () => { closeSettings(); showMenu(); };

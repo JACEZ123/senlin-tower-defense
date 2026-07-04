@@ -18,8 +18,8 @@ const OUT = 'web/assets/audio'; fs.mkdirSync(OUT, { recursive: true });
 
 /* 条目:type=music 走 music_generation(BGM/长音);type=sfx 也走 music 但只要几秒,截短。 */
 const ITEMS = [
-  { id: 'bgm_main', type: 'music', secs: 120, prompt: '纯音乐,电子音乐,欢快,无人声,轻松纯音乐' },
-  { id: 'bgm_boss', type: 'music', secs: 120, prompt: '纯音乐,电子音乐,紧张激烈,无人声,Boss战斗纯音乐' },
+  { id: 'bgm_main', type: 'music', secs: 120, prompt: '休闲娱乐小游戏背景音效,无人声,无哼唱,轻松欢快' },
+  { id: 'bgm_boss', type: 'music', secs: 120, prompt: '休闲娱乐小游戏背景音效,无人声,无哼唱,轻松欢快,稍紧张的Boss战版本' },
   { id: 'wave',     type: 'sfx', secs: 3, prompt: '纯音乐音效,游戏波次开始的短促上扬小号信号音,无人声,无歌词,无数拍,无哼唱' },
   { id: 'boss',     type: 'sfx', secs: 5, prompt: '纯音乐音效,巨兽出场的低沉号角与战鼓,威胁感,无人声,无歌词,无数拍,无哼唱' },
   { id: 'spawn_boss', type: 'sfx', secs: 4, prompt: '纯音效,低沉轰鸣与战鼓,巨物登场压迫感,无人声,无歌词,无数拍,无哼唱' },

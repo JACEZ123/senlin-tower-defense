@@ -5,12 +5,15 @@
  * ========================================================================= */
 window.SND = (function () {
   let ctx = null, master = null, muted = false, bgmEl = null, bgmName = '';
+  // 音量/开关(由设置面板通过 config() 控制;默认音乐 30%、音效 27%)
+  let musicOn = true, sfxOn = true, musicVol = 0.30, sfxVol = 0.27;
+  const sfxGain = () => 0.5 * sfxVol, bgmVol = () => 0.35 * musicVol;
   const buffers = {};          // 已加载的 mp3 → AudioBuffer
   const lastPlay = {};         // 限频
   try { muted = localStorage.getItem('wttl_mute') === '1'; } catch (e) {}
 
   function ac() {
-    if (!ctx) { ctx = new (window.AudioContext || window.webkitAudioContext)(); master = ctx.createGain(); master.gain.value = 0.15; /* 默认音量=原始的30% */ master.connect(ctx.destination); }
+    if (!ctx) { ctx = new (window.AudioContext || window.webkitAudioContext)(); master = ctx.createGain(); master.gain.value = sfxGain(); master.connect(ctx.destination); }
     if (ctx.state === 'suspended') ctx.resume();
     return ctx;
   }
@@ -82,7 +85,7 @@ window.SND = (function () {
   const MIN_GAP = { default: 130, shoot: 75, die: 60 };   // 同名限频(ms)
 
   function play(name) {
-    if (muted) return;
+    if (muted || !sfxOn) return;
     const now = performance.now();
     const cls = name.startsWith('shoot_') ? 'shoot' : (name === 'die' ? 'die' : 'default');
     const gap = MIN_GAP[cls];
@@ -101,7 +104,6 @@ window.SND = (function () {
 
   // ---------- BGM(仅文件,MiniMax 生成后自动生效) ----------
   function tryBgm() { if (bgmName) bgm(bgmName); }
-  const BGM_VOL = 0.105;                     // 默认音量=原始 0.35 的 30%
   function fadeEl(el, to, ms, done) {        // <audio> 音量线性渐变
     const from = el.volume, t0 = performance.now();
     (function step() {
@@ -113,13 +115,23 @@ window.SND = (function () {
   }
   function bgm(name) {                       // bgm('main') / bgm('boss') / bgm(null) 停;切换带淡入淡出
     bgmName = name;
-    if (!name || muted) { if (bgmEl) { const old = bgmEl; bgmEl = null; fadeEl(old, 0, 500, () => old.pause()); } return; }
+    if (!name || muted || !musicOn) { if (bgmEl) { const old = bgmEl; bgmEl = null; fadeEl(old, 0, 500, () => old.pause()); } return; }
     if (bgmEl && bgmEl.dataset.name === name) return;
     if (bgmEl) { const old = bgmEl; fadeEl(old, 0, 600, () => old.pause()); }   // 旧曲淡出
     bgmEl = new Audio(`assets/audio/bgm_${name}.mp3`); bgmEl.dataset.name = name; bgmEl.loop = true; bgmEl.volume = 0;
     const el = bgmEl;
-    el.play().then(() => fadeEl(el, BGM_VOL, 900)).catch(() => { if (bgmEl === el) bgmEl = null; });   // 新曲淡入;未解锁则静默
+    el.play().then(() => fadeEl(el, bgmVol(), 900)).catch(() => { if (bgmEl === el) bgmEl = null; });   // 新曲淡入;未解锁则静默
   }
   function setMuted(m) { muted = m; try { localStorage.setItem('wttl_mute', m ? '1' : '0'); } catch (e) {} if (m && bgmEl) { bgmEl.pause(); bgmEl = null; } else if (!m) tryBgm(); }
-  return { play, consume, bgm, setMuted, isMuted: () => muted };
+  function config(o) {   // {musicOn,sfxOn,musicVol(0-1),sfxVol(0-1)}
+    if (o.musicOn != null) musicOn = o.musicOn;
+    if (o.sfxOn != null) sfxOn = o.sfxOn;
+    if (o.musicVol != null) musicVol = o.musicVol;
+    if (o.sfxVol != null) sfxVol = o.sfxVol;
+    if (master) master.gain.value = sfxGain();
+    if (!musicOn) { if (bgmEl) { const old = bgmEl; bgmEl = null; fadeEl(old, 0, 400, () => old.pause()); } }
+    else if (bgmEl) bgmEl.volume = bgmVol();
+    else tryBgm();
+  }
+  return { play, consume, bgm, setMuted, isMuted: () => muted, config };
 })();
