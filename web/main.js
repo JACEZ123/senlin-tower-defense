@@ -173,7 +173,7 @@
     return d;
   }
   function showMenu() {
-    state = null; grade = ''; hideScreens(); $('menu').style.display = 'flex';
+    state = null; grade = ''; cv.style.filter = ''; hideScreens(); $('menu').style.display = 'flex';
     const p = prog(); chapter = Math.min(GROUPS.length - 1, Math.floor(Math.min(p.cleared, 39) / PER));   // 默认打开当前进度所在章
     renderChapters(); renderChapter();
   }
@@ -220,7 +220,7 @@
   const ATKDESC = { single: '单体物理', splash: '范围溅射', slow: '减速冰冻', poison: '持续中毒', chain: '闪电连锁', pierce: '穿透狙击', burn: '范围灼烧', arcane: '真伤奥术' };
   function hideScreens() { for (const id of ['menu', 'home', 'shop', 'codex', 'settings', 'overlay', 'popup']) $(id).style.display = 'none'; updateChestBtn(); }
   function showHome() {
-    state = null; grade = ''; hideScreens();
+    state = null; grade = ''; cv.style.filter = ''; hideScreens();
     $('home').style.display = 'block'; $('home').style.backgroundImage = 'url(assets/bg_home.png)';
     const p = prog(); $('hContSub').textContent = '上次进度 · 第 ' + Math.min(40, p.cleared + 1) + ' 关';
     setNum('homeGems', gems(), 22);
@@ -345,13 +345,15 @@
   }
   function startLevel(n) {
     level = LV.buildLevel(n); state = E.createState(level); anim = 0; speed = 1; setNum('speedNum', 1, 14);
-    grade = THEME_GRADE[level.theme] || ''; setPaused(false); chestMode = false;
+    grade = THEME_GRADE[level.theme] || ''; cv.style.filter = grade;   // 色调滤镜挂 canvas(GPU),不逐精灵设 ctx.filter(怪多时会卡)
+    setPaused(false); chestMode = false;
     baseHitAt = -99; lastLives = null;
     popupSlot = -1; for (const k in hud) delete hud[k];
     level.towers.forEach(ensureSkinSheets);   // 预载已装备皮肤精灵表
     hideScreens();   // 隐藏首页/选关/商店/图鉴/设置等一切界面
     // 解锁说明 (#9)：本关新解锁、且没看过的塔
     const p = prog(); unlockQ = level.towers.filter((k) => C.TOWERS[k].unlock === n && !p.seen.includes(k));
+    render(); syncHud();   // 立即渲染新关卡首帧,清掉上一局残影(过场期间主循环不渲染)
     // 开场过场视频（缺失则立即跳过），播完再弹解锁说明
     playCut('cut_start', level.name, showNextUnlock);
   }
@@ -371,7 +373,7 @@
     if (a && a.frames > 1) { sw = im.width / a.frames; const fr = (opt && opt.frame != null) ? (opt.frame % a.frames) : (Math.floor(anim * a.fps) % a.frames); sx = fr * sw; }
     const sq = (opt && opt.squash ? opt.squash : 1) * (opt && opt.blink ? 0.93 : 1);
     const H = vk(h) * sq, Wd = vk(h) * (sw / sh) * (2 - sq) * (opt && opt.flash ? 1.04 : 1);   // 压扁时略变宽(挤压守恒,更 Q 弹)
-    ctx.save(); ctx.filter = (opt && opt.flash) ? 'brightness(2.6) saturate(.4)' : (grade || 'none');
+    ctx.save(); if (opt && opt.flash) ctx.filter = 'brightness(2.6) saturate(.4)';
     if (opt && opt.tilt) { const X = vx(cx), Y = vy(cy); ctx.translate(X, Y); ctx.rotate(opt.tilt); ctx.translate(-X, -Y); }   // 绕脚点左右摇摆
     if (opt && opt.flip) { const X = vx(cx); ctx.translate(X, 0); ctx.scale(-1, 1); ctx.translate(-X, 0); }   // 水平镜像(朝向目标)
     ctx.drawImage(im, sx, 0, sw, sh, vx(cx) - Wd / 2, vy(cy) - H * (foot == null ? 0.82 : foot), Wd, H);
@@ -430,7 +432,7 @@
     shadow(p.x, p.y + 6, 32);
     if (img) {
       const bw = vk(100), bh = bw * (img.height / img.width), sh = 1 - hit * 0.06;
-      ctx.save(); ctx.filter = hit > 0 ? `brightness(${1 + hit * 1.7}) saturate(.55)` : (grade || 'none');
+      ctx.save(); if (hit > 0) ctx.filter = `brightness(${1 + hit * 1.7}) saturate(.55)`;
       ctx.drawImage(img, vx(p.x) - bw / 2, vy(p.y) - bh * 0.72 * sh, bw, bh * sh); ctx.restore();
     } else {   // 兜底
       ctx.beginPath(); ctx.arc(vx(p.x), vy(p.y), vk(28), 0, 7); ctx.fillStyle = bs === 2 ? 'rgba(90,80,70,.85)' : 'rgba(190,150,95,.92)'; ctx.fill();
@@ -558,7 +560,7 @@
       ctx.save(); ctx.globalAlpha = 0.35 + 0.25 * gp; const gg = ctx.createRadialGradient(vx(p0.x + 8), vy(p0.y), vk(4), vx(p0.x + 8), vy(p0.y), vk(40));
       gg.addColorStop(0, 'rgba(180,120,240,.8)'); gg.addColorStop(1, 'rgba(180,120,240,0)'); ctx.fillStyle = gg; ctx.beginPath(); ctx.arc(vx(p0.x + 8), vy(p0.y), vk(40), 0, 7); ctx.fill(); ctx.restore();
       shadow(p0.x + 8, p0.y + 6, 26);
-      ctx.save(); ctx.filter = grade || 'none'; ctx.drawImage(portal, vx(p0.x + 8) - pw / 2, vy(p0.y) - ph * 0.62, pw, ph); ctx.restore();
+      ctx.save(); ctx.drawImage(portal, vx(p0.x + 8) - pw / 2, vy(p0.y) - ph * 0.62, pw, ph); ctx.restore();
     } else {
       ctx.beginPath(); ctx.ellipse(vx(p0.x + 8), vy(p0.y), vk(24), vk(15), 0, 0, 7); ctx.fillStyle = 'rgba(22,14,28,.8)'; ctx.fill();
       ctx.strokeStyle = 'rgba(150,110,180,.75)'; ctx.lineWidth = vk(3); ctx.stroke();
