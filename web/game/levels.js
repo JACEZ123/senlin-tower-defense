@@ -137,7 +137,7 @@ function buildWave(level, w, waveCount) {
   // Boss：固定第 10 波（末波）末尾登场
   if (w === waveCount) list.push({ type: pickBoss(level), gap: 1.6, boss: true });
   // 强度：血量随关卡/波次爬升；速度前期慢、后期加速
-  const hpMul = (1 + (level - 1) * 0.05) * (1 + (w - 1) * 0.18) * (early ? 0.6 : 1);   // 波内血量陡增:后段波次总压力必须超过单塔输出上限,逼多塔运营   // 前 3 波血量缓冲（开局金极少,只建得起 1 座塔）
+  const hpMul = (1 + (level - 1) * 0.05) * (1 + (w - 1) * 0.18) * (early ? (level <= 2 ? 0.45 : 0.6) : 1);   // 波内血量陡增:后段波次总压力必须超过单塔输出上限,逼多塔运营   // 前 3 波血量缓冲（开局金极少,只建得起 1 座塔）
   const baseSp = 1 + Math.min(0.45, (level - 1) * 0.009);
   const waveSp = early ? 0.7 : (w <= 5 ? 0.92 : 1 + Math.min(0.28, (w - 5) * 0.055));   // 前期慢，后期越来越快
   const spMul = baseSp * waveSp;
@@ -163,20 +163,42 @@ function buildLevel(n) {
   const theme = THEME_GROUPS[clamp(Math.floor((n - 1) / 5), 0, 7)];
   const path = genPath(n);
   const spots = genSlots(path, n);                 // 候选位（用于撒障碍物）
-  // 障碍物：占据部分候选位，击破得金币、腾出可建位。分大/小两类：
-  //   大障碍：血厚(打得久)、金币多、占地大；小障碍：血薄(打得快)、金币少、占地小。数量随关卡增加。
-  const obTypes = ['ob_rock', 'ob_crystal', 'ob_barrel', 'ob_stump'];
-  const obCount = n <= 1 ? 1 : n <= 3 ? 2 : clamp(4 + Math.floor(n / 3), 4, 11);   // 前几关障碍更少
+  // 障碍物：大中小三档、种类丰富、铺满全图。占建造位的挡建塔,散布的是"打了给钱"的资源点。
+  //   小:血薄金少打得快 / 中:均衡 / 大:巨型,血厚几倍、金币可观(值得集火投资)。
+  const OB_S = ['ob_barrel', 'ob_stump', 'ob2_rock_s1', 'ob2_rock_s2', 'ob2_crystal_s', 'ob2_stump_s', 'ob2_log_s', 'ob2_mush_s', 'ob2_bush_s', 'ob2_ice_s', 'ob2_barrel_s', 'ob2_crate_s'];
+  const OB_M = ['ob_rock', 'ob_crystal', 'ob2_rock_m1', 'ob2_rock_m2', 'ob2_crystal_m', 'ob2_stump_m', 'ob2_log_m', 'ob2_mush_m', 'ob2_bush_m', 'ob2_lava_m', 'ob2_crate_m', 'ob2_thorn_m'];
+  const OB_B = ['ob2_rock_b1', 'ob2_rock_b2', 'ob2_crystal_b', 'ob2_tree_b1', 'ob2_tree_b2', 'ob2_mush_b', 'ob2_ice_b', 'ob2_lava_b', 'ob2_vine_b', 'ob2_ruin_b'];
   const obstacles = [];
-  for (let i = 0; i < obCount && i < spots.length; i++) {
-    const p = spots[Math.floor((i + 0.5) * spots.length / obCount)];
-    const big = (i % 2 === 0);                      // 大小交替
+  let seed = n * 7349 + 1013;                                   // 确定性伪随机(同关卡布局固定)
+  const rnd = () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; };
+  const obOk = (x, y, r) => { const d = distToPath(x, y, path); return x > 60 && x < VW - 60 && y > 130 && y < VH - 80
+    && d > r + 42 && d < 300   // 不压路,但也别太远(塔射程够得着,能当资源点打)
+    && spots.every((s) => Math.hypot(s.x - x, s.y - y) > r + 42)   // 不占建造位(占位障碍单独放)
+    && obstacles.every((o) => Math.hypot(o.x - x, o.y - y) > r + 34 * (o.sizeScale || 1) + 8); };
+  const addOb = (x, y, tier, i) => {
+    const t = tier === 2 ? OB_B[(i + n) % OB_B.length] : tier === 1 ? OB_M[(i + n) % OB_M.length] : OB_S[(i + n) % OB_S.length];
+    const sc = tier === 2 ? 2.0 + rnd() * 0.7 : tier === 1 ? 1.0 + rnd() * 0.25 : 0.55 + rnd() * 0.2;
     obstacles.push({
-      x: p.x, y: p.y, type: obTypes[(i + n) % obTypes.length],
-      big, sizeScale: big ? 1.35 : 0.8,
-      hp: big ? (130 + n * 26) : (45 + n * 9),       // 大的血多、打得久
-      gold: big ? (24 + n * 3) : (8 + n),            // 大的金币多
+      x: Math.round(x), y: Math.round(y), type: t, big: tier === 2, sizeScale: sc,
+      hp: tier === 2 ? (420 + n * 70) : tier === 1 ? (90 + n * 16) : (32 + n * 6),
+      gold: tier === 2 ? (65 + n * 8) : tier === 1 ? (14 + n * 2) : (5 + n),
     });
+  };
+  // ① 占一部分建造位(挡位,清掉腾地)
+  const onSpots = Math.min(spots.length - 6, n <= 3 ? 0 : 2 + Math.floor(n / 4));   // 前 3 关不堵位(新手期)
+  for (let i = 0; i < onSpots; i++) { const p = spots[Math.floor((i + 0.5) * spots.length / onSpots)]; addOb(p.x, p.y, i % 3 === 0 ? 1 : 0, i); }
+  // ② 全图散布(资源点):先放巨型(占地大,优先抢位),再铺小/中
+  const scatterN = clamp(16 + n, 18, 44), bigN = clamp(2 + Math.floor(n / 8), 2, 5);
+  for (let i = 0, tries = 0; i < bigN && tries < 400; tries++) {
+    const x = 90 + rnd() * (VW - 180), y = 160 + rnd() * (VH - 270);
+    if (!obOk(x, y, 58)) continue;
+    addOb(x, y, 2, i); i++;
+  }
+  for (let i = 0, tries = 0; i < scatterN && tries < 600; tries++) {
+    const x = 70 + rnd() * (VW - 140), y = 140 + rnd() * (VH - 240);
+    const tier = rnd() < 0.4 ? 1 : 0;
+    if (!obOk(x, y, tier === 1 ? 34 : 22)) continue;
+    addOb(x, y, tier, i); i++;
   }
   const waveCount = WAVES;   // 固定 10 波，第 10 波 Boss
   const towers = C.TOWER_KEYS.filter((k) => (C.TOWERS[k].unlock || 1) <= n);

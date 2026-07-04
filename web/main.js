@@ -22,7 +22,13 @@
   const TW = []; for (const k of TKEYS) for (let l = 1; l <= 3; l++) TW.push(`tw_${k}_${l}`);
   const ATKIMG = TKEYS.map((k) => `tw_${k}_atk`);   // 攻击动画精灵表(若已生成则加载)
   const ICONS = ['ic_upgrade', 'ic_sell', 'ic_branchA', 'ic_branchB', 'ic_coin', 'ic_heart', 'ic_speed', 'ic_menu'];
-  const OBS = ['ob_rock', 'ob_crystal', 'ob_barrel', 'ob_stump'];
+  const OBS = ['ob_rock', 'ob_crystal', 'ob_barrel', 'ob_stump',
+    // ob2_* 新障碍物素材(大中小三档;缺图时绘制端回退到旧四件套)
+    'ob2_rock_s1', 'ob2_rock_s2', 'ob2_rock_m1', 'ob2_rock_m2', 'ob2_rock_b1', 'ob2_rock_b2',
+    'ob2_crystal_s', 'ob2_crystal_m', 'ob2_crystal_b', 'ob2_stump_s', 'ob2_stump_m',
+    'ob2_tree_b1', 'ob2_tree_b2', 'ob2_log_s', 'ob2_log_m', 'ob2_mush_s', 'ob2_mush_m', 'ob2_mush_b',
+    'ob2_bush_s', 'ob2_bush_m', 'ob2_ice_s', 'ob2_ice_b', 'ob2_lava_m', 'ob2_lava_b',
+    'ob2_barrel_s', 'ob2_crate_s', 'ob2_crate_m', 'ob2_vine_b', 'ob2_ruin_b', 'ob2_thorn_m'];
   const THEMES = ['grass', 'volcano', 'forest', 'ice', 'desert', 'swamp', 'cavern', 'sky'];
   const BG = THEMES.map((t) => 'b_' + t);
   const PORTALS = THEMES.map((t) => 'portal_' + t);                       // 8 主题怪物入口传送门
@@ -474,6 +480,14 @@
       // 十字星芒（主轴对准射向）
       ctx.globalAlpha = f; ctx.strokeStyle = '#fff'; ctx.lineWidth = vk(3) * f;
       for (const d of [0, Math.PI / 2, Math.PI, -Math.PI / 2]) { const rr = (d === 0 ? vk(20) : vk(11)) * (0.6 + f * 0.7); ctx.beginPath(); ctx.moveTo(X, Y); ctx.lineTo(X + Math.cos(a + d) * rr, Y + Math.sin(a + d) * rr); ctx.stroke(); }
+    } else if (k === 'netline') {                    // 捕网宝箱出网：网兜沿抛物线飞向目标 + 绳索
+      const tx2 = vx(e.tx), ty2 = vy(e.ty);
+      const ix = X + (tx2 - X) * pr, iy = Y + (ty2 - Y) * pr - Math.sin(pr * Math.PI) * vk(36);
+      ctx.globalAlpha = 0.8; ctx.strokeStyle = col; ctx.lineWidth = vk(2);
+      ctx.beginPath(); ctx.moveTo(X, Y); ctx.quadraticCurveTo((X + ix) / 2, Math.min(Y, iy) - vk(14), ix, iy); ctx.stroke();   // 绳
+      const nr = vk(10 + pr * 12);                                        // 展开的网兜
+      ctx.beginPath(); ctx.arc(ix, iy, nr, 0, 7); ctx.stroke();
+      for (let i = -1; i <= 1; i++) { ctx.beginPath(); ctx.moveTo(ix + i * nr * 0.55, iy - nr); ctx.lineTo(ix + i * nr * 0.55, iy + nr); ctx.stroke(); ctx.beginPath(); ctx.moveTo(ix - nr, iy + i * nr * 0.55); ctx.lineTo(ix + nr, iy + i * nr * 0.55); ctx.stroke(); }
     } else if (k === 'chainbolt') {                  // 闪电链：连接怪物的锯齿电弧
       ctx.globalAlpha = (1 - pr) * (0.6 + 0.4 * Math.random());
       for (let i = 0; i < e.pts.length - 1; i++) {
@@ -553,7 +567,8 @@
     for (const o of s.obstacles) {
       const sc = o.sizeScale || 1, sz = 56 * sc, topY = vy(o.y) - vk(sz * 0.62);
       shadow(o.x, o.y, 22 * sc);
-      drawSprite(o.type, o.x, o.y, sz, 0.7, { flash: o.hitT > 0 });
+      const oimg = IMG[o.type] ? o.type : (o.big ? 'ob_rock' : 'ob_stump');   // 缺图回退旧素材
+      drawSprite(oimg, o.x, o.y, sz, 0.7, { flash: o.hitT > 0 });
       const focused = o.id === s.focusId;
       if (focused) {   // 集火攻击中：红色准星 + 虚线环（明确"正在攻击此障碍"）
         const cx2 = vx(o.x), cy2 = vy(o.y) - vk(sz * 0.32), rr = vk(20 * sc);
@@ -592,12 +607,43 @@
       const isPile = it.effect === 'goldpile';
       if (isPile) { const pl = 0.5 + 0.5 * Math.sin(anim * 3.5); ctx.save(); ctx.globalAlpha = 0.35 + 0.4 * pl; const g = ctx.createRadialGradient(vx(c.x), vy(c.y), vk(3), vx(c.x), vy(c.y), vk(40)); g.addColorStop(0, 'rgba(255,232,120,.95)'); g.addColorStop(1, 'rgba(255,210,80,0)'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(vx(c.x), vy(c.y), vk(40), 0, 7); ctx.fill(); ctx.restore(); }
       shadow(c.x, c.y, 18);
-      const cbob = isPile ? Math.abs(Math.sin(anim * 3.5)) * 4 : Math.sin(anim * 2.4 + c.id) * 2;   // 金币堆跳动提示可点击
-      drawSprite(it.img || 'chest_closed', c.x, c.y + 2 + cbob, 62, 0.72);
+      // 宝箱待机动效:缓慢呼吸挤压 + 每 ~4s 一次开心小晃
+      const cbob = isPile ? Math.abs(Math.sin(anim * 3.5)) * 4 : Math.sin(anim * 1.3 + c.id) * 2;
+      const cbr = 1 + Math.sin(anim * 1.5 + c.id * 1.3) * 0.035;
+      const wgPh = (anim * 0.9 + c.id * 0.61) % 3.6, wiggle = wgPh < 0.5 ? Math.sin(wgPh * 25) * 0.09 * (1 - wgPh * 2) : 0;
+      drawSprite(it.img || 'chest_closed', c.x, c.y + 2 + cbob, 62, 0.72, { squash: cbr, tilt: wiggle });
+      const CX = vx(c.x), CTOP = vy(c.y) - vk(52);
+      if (it.effect === 'income') {   // 产钱信号:常驻「金币+1」徽章,每次进账时放大弹跳
+        const pop = 1 + Math.max(0, 1 - Math.abs((c.acc || 0) - 0.95) * 8) * 0.5;
+        const ch = vk(13) * pop;
+        if (IMG.ic_coin) ctx.drawImage(IMG.ic_coin, CX - ch * 1.5, CTOP - ch / 2, ch, ch);
+        drawNum('+1', CX - ch * 0.2, CTOP - ch * 0.55, ch, 'left');
+      } else if (it.effect === 'net' || it.effect === 'burst') {   // 冷却进度环:看得到"快要出手了"
+        const p01 = 1 - Math.max(0, (c.timer || 0)) / it.period;
+        ctx.save(); ctx.lineWidth = vk(3.4); ctx.lineCap = 'round';
+        ctx.strokeStyle = 'rgba(0,0,0,.4)'; ctx.beginPath(); ctx.arc(CX, CTOP, vk(10), 0, 7); ctx.stroke();
+        ctx.strokeStyle = it.effect === 'net' ? '#8fe3c8' : '#c77dff';
+        ctx.beginPath(); ctx.arc(CX, CTOP, vk(10), -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * p01); ctx.stroke();
+        if (p01 > 0.96) { ctx.globalAlpha = 0.5 + 0.5 * Math.sin(anim * 8); ctx.beginPath(); ctx.arc(CX, CTOP, vk(13), 0, 7); ctx.stroke(); }   // 满环闪烁=即将触发
+        ctx.restore();
+      } else if (it.effect === 'haste') {   // 光环箭头脉冲已有底环,补一个小闪电徽章示意加速
+        ctx.save(); ctx.globalAlpha = 0.75 + 0.25 * Math.sin(anim * 4);
+        if (IMG.ic_speed) { const ch = vk(15); ctx.drawImage(IMG.ic_speed, CX - ch / 2, CTOP - ch / 2, ch, ch); }
+        ctx.restore();
+      }
     }
     // 塔
     for (const t of s.towers) {
-      const st = E.towerStats(t), bob = Math.sin(anim * 3 + t.id * 1.7) * 1.6;       // 待机起伏
+      // 待机动效:超慢呼吸(4-6s 一循环,每塔错开),轻微起伏+吸气挺起呼气放松+偶尔"眨眼"式快速一缩。
+      // 刻意避免快速循环播放的抽风感——所有频率都低于 1.6rad/s。
+      const st = E.towerStats(t);
+      const brPh = t.id * 2.39, brW = 1.05 + (t.id % 5) * 0.09;                       // 个体相位/呼吸频率(周期 ~4.5-6s)
+      const breath = Math.sin(anim * brW + brPh);
+      const bob = breath * 1.3;                                                        // 缓慢起伏
+      const idleSq = 1 + breath * 0.022;                                               // 呼吸挺起/放松(2% 高度变化)
+      const idleTl = Math.sin(anim * brW * 0.7 + brPh) * 0.018;                        // 极轻微左右摇
+      const blinkT = (anim * 0.35 + t.id * 0.77) % 2.6;                                // ~7.4s 一次
+      const blink = blinkT < 0.05;                                                     // 眨眼式快速一缩
       const punch = (st.rate - t.cd) < 0.1 ? 1.16 : 1;                                  // 开火回弹
       // 底座：把塔"落"在棋盘上，统一画风、消除悬浮违和
       const px = vx(t.x), py = vy(t.y);
@@ -615,11 +661,11 @@
       if (sid && isMax && IMG[skAtk] && firing) {                            // 皮肤攻击动画
         drawSprite(skAtk, t.x, t.y + 4, 80, 0.78, { frame: Math.floor((tsf / ATKDUR) * 16), flip: faceLeft });
       } else if (sid && isMax && IMG[skIdle]) {                              // 皮肤待机动画
-        drawSprite(skIdle, t.x, t.y + 4 + bob, 78 * punch, 0.78, { flip: faceLeft });
+        drawSprite(skIdle, t.x, t.y + 4 + bob, 78 * punch, 0.78, { flip: faceLeft, squash: idleSq, tilt: idleTl, blink });
       } else if (atk && isMax && firing) {                                   // 默认攻击动画(仅3级/分支)
         drawSprite(atk.asset, t.x, t.y + 4, 80, 0.78, { frame: Math.floor((tsf / ATKDUR) * atk.frames), flip: faceLeft });
       } else {
-        drawSprite(towerImg(t), t.x, t.y + 4 + bob, 78 * punch, 0.78, { flip: faceLeft });
+        drawSprite(towerImg(t), t.x, t.y + 4 + bob, 78 * punch, 0.78, { flip: faceLeft, squash: idleSq, tilt: idleTl, blink });
       }
       const dots = t.branch ? 4 : t.level + 1; for (let k = 0; k < dots; k++) { ctx.beginPath(); ctx.arc(vx(t.x) - vk(12) + vk(8) * k, vy(t.y) + vk(11), vk(2.8), 0, 7); ctx.fillStyle = t.branch ? '#b6ff5a' : '#ffd23f'; ctx.fill(); }
     }

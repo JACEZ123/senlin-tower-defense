@@ -191,7 +191,11 @@ function runChests(s, dt) {
         c.timer = it.period;
         let best = null, bl = 1e9;
         for (const e of s.enemies) { if (e.netT > 0 || e.def.boss) continue; if (dist(c.x, c.y, e.x, e.y) > it.range) continue; if (e.hp < bl) { bl = e.hp; best = e; } }
-        if (best) { best.netT = it.dur; s.effects.push({ kind: 'net', x: best.x, y: best.y, color: '#dfe', t: 0, life: 0.4 }); }
+        if (best) {
+          best.netT = it.dur;
+          s.effects.push({ kind: 'netline', x: c.x, y: c.y - 14, tx: best.x, ty: best.y, color: '#bfe9d5', t: 0, life: 0.38 });   // 从宝箱抛出网
+          s.effects.push({ kind: 'net', x: best.x, y: best.y, color: '#dfe', t: 0, life: 0.5 });
+        }
       }
     } else if (it.effect === 'burst') {
       c.timer -= dt;

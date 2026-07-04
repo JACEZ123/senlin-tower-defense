@@ -161,7 +161,9 @@ Page({
 
     // 塔
     for (const t of s.towers) {
-      this.drawSprite(C.TOWERS[t.key].img, t.x, t.y, 74, 0.82);
+      // 待机动效:超慢呼吸(周期 ~5s,每塔错开) + 极轻微摇摆
+      const brW = 1.05 + (t.id % 5) * 0.09, brPh = t.id * 2.39, breath = Math.sin(this.anim * brW + brPh);
+      this.drawSprite(C.TOWERS[t.key].img, t.x, t.y + breath * 1.2, 74, 0.82, { squash: 1 + breath * 0.022, tilt: Math.sin(this.anim * brW * 0.7 + brPh) * 0.018 });
       // 等级点
       const lvl = t.level + 1;
       for (let k = 0; k < lvl; k++) {
