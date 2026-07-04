@@ -10,7 +10,7 @@ window.SND = (function () {
   try { muted = localStorage.getItem('wttl_mute') === '1'; } catch (e) {}
 
   function ac() {
-    if (!ctx) { ctx = new (window.AudioContext || window.webkitAudioContext)(); master = ctx.createGain(); master.gain.value = 0.25; master.connect(ctx.destination); }
+    if (!ctx) { ctx = new (window.AudioContext || window.webkitAudioContext)(); master = ctx.createGain(); master.gain.value = 0.15; /* 默认音量=原始的30% */ master.connect(ctx.destination); }
     if (ctx.state === 'suspended') ctx.resume();
     return ctx;
   }
@@ -101,7 +101,7 @@ window.SND = (function () {
 
   // ---------- BGM(仅文件,MiniMax 生成后自动生效) ----------
   function tryBgm() { if (bgmName) bgm(bgmName); }
-  const BGM_VOL = 0.18;                      // 初始音量(原 0.35 的一半)
+  const BGM_VOL = 0.105;                     // 默认音量=原始 0.35 的 30%
   function fadeEl(el, to, ms, done) {        // <audio> 音量线性渐变
     const from = el.volume, t0 = performance.now();
     (function step() {
