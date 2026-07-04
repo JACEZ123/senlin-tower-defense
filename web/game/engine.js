@@ -8,6 +8,7 @@
 const C = require('./config.js');
 
 function dist(ax, ay, bx, by) { const dx = ax - bx, dy = ay - by; return Math.sqrt(dx * dx + dy * dy); }
+function snd(s, name) { if (s.sounds && s.sounds.length < 40) s.sounds.push(name); }   // 声音事件(封顶防无消费者时膨胀)
 
 function createState(level) {
   const s = {
@@ -19,6 +20,7 @@ function createState(level) {
     spawnQueue: [], spawnTimer: 0, _eid: 1, _tid: 1, healTick: 0,
     nextTimer: 8, firstDelay: 8, betweenDelay: 6,   // 自动出怪倒计时
     effects: [], focusId: 0,                         // 命中特效 / 集火目标
+    sounds: [],                                      // 声音事件队列(渲染端每帧消费;无消费者时封顶不增长)
     obstacles: (level.obstacles || []).map((o, i) => ({ id: 9000 + i, x: o.x, y: o.y, type: o.type, hp: o.hp, maxHp: o.hp, gold: o.gold, big: !!o.big, sizeScale: o.sizeScale || 1 })),
     chests: [], _cid: 1,                             // 已放置的宝箱（道具）
     maxTowers: level.maxTowers, selectedId: 0,
@@ -67,6 +69,8 @@ function startWave(s) {
   s.wave += 1;
   s.spawnQueue = s.level.buildWave(s.wave);
   s.spawnTimer = 0.3; s.phase = 'spawning';
+  snd(s, s.spawnQueue.some((it) => it.boss) ? 'boss' : 'wave');
+  s._seenTypes = {};                                  // 本波已出场的怪物家族(用于"新怪登场"音)
   return true;
 }
 
@@ -97,6 +101,7 @@ function build(s, x, y, key) {
   const t = { id: s._tid++, key, level: 0, branch: null, cd: 0, x, y, angle: -Math.PI / 2 };
   s.towers.push(t); s.selectedId = t.id;
   pushFloat(s, x, y, '-' + def.cost, '#ffd23f');
+  snd(s, 'build');
   return true;
 }
 
@@ -106,6 +111,7 @@ function upgrade(s, id) {
   if (!next || s.gold < next.upgrade) return false;
   s.gold -= next.upgrade; t.level += 1;
   pushFloat(s, t.x, t.y, '-' + next.upgrade, '#ffd23f');
+  snd(s, 'upgrade');
   return true;
 }
 
@@ -116,6 +122,7 @@ function branch(s, id, which) {
   const b = def.branches[which]; if (!b || s.gold < b.upgrade) return false;
   s.gold -= b.upgrade; t.branch = which;
   pushFloat(s, t.x, t.y, '★' + b.name, '#b6ff5a');
+  snd(s, 'branch');
   return true;
 }
 
@@ -126,6 +133,7 @@ function sell(s, id) {
   if (t.branch) spent += def.branches[t.branch].upgrade;
   const refund = Math.floor(spent * 0.6); s.gold += refund;
   pushFloat(s, t.x, t.y, '+' + refund, '#ffd23f'); s.towers.splice(i, 1);
+  snd(s, 'sell');
   if (s.selectedId === id) s.selectedId = 0;
   return true;
 }
@@ -155,6 +163,7 @@ function collectChest(s, id) {
   const c = s.chests[i]; if (c.item.effect !== 'goldpile') return false;
   const g = Math.max(1, Math.floor(s.gold * (c.item.pct || 0.25)));
   s.gold += g; pushFloat(s, c.x, c.y - 6, '+' + g, '#ffd23f');
+  snd(s, 'coin');
   s.chests.splice(i, 1); return true;
 }
 function applyChestInstant(s, c) {
@@ -194,6 +203,7 @@ function runChests(s, dt) {
         if (best) {
           best.netT = it.dur;
           s.effects.push({ kind: 'netline', x: c.x, y: c.y - 14, tx: best.x, ty: best.y, color: '#bfe9d5', t: 0, life: 0.38 });   // 从宝箱抛出网
+          snd(s, 'net');
           s.effects.push({ kind: 'net', x: best.x, y: best.y, color: '#dfe', t: 0, life: 0.5 });
         }
       }
@@ -203,7 +213,7 @@ function runChests(s, dt) {
         c.timer = it.period;
         let best = null, bh = -1;
         for (const e of s.enemies) { if (dist(c.x, c.y, e.x, e.y) > it.range) continue; if (e.maxHp > bh) { bh = e.maxHp; best = e; } }
-        if (best) { dmgEnemy(s, best, it.dmg, true); s.effects.push({ kind: 'arcane', x: best.x, y: best.y, color: '#c77dff', r: 44, t: 0, life: 0.5 }); pushFloat(s, best.x, best.y, '-' + it.dmg, '#c77dff'); }
+        if (best) { dmgEnemy(s, best, it.dmg, true); s.effects.push({ kind: 'arcane', x: best.x, y: best.y, color: '#c77dff', r: 44, t: 0, life: 0.5 }); pushFloat(s, best.x, best.y, '-' + it.dmg, '#c77dff'); snd(s, 'burst'); }
       }
     }
   }
@@ -239,7 +249,12 @@ function update(s, dt) {
   }
   if (s.phase === 'spawning') {
     s.spawnTimer -= dt;
-    if (s.spawnTimer <= 0 && s.spawnQueue.length) { const it = s.spawnQueue.shift(); spawnEnemy(s, it); s.spawnTimer = it.gap * (C.BALANCE ? C.BALANCE.SPAWN_GAP : 1); }
+    if (s.spawnTimer <= 0 && s.spawnQueue.length) {
+      const it = s.spawnQueue.shift(); spawnEnemy(s, it);
+      const d = C.ENEMIES[it.type], fam = it.boss ? 'spawn_boss' : d.fly ? 'spawn_fly' : d.armor ? 'spawn_heavy' : (d.speed > 100 ? 'spawn_fast' : 'spawn_normal');
+      if (s._seenTypes && !s._seenTypes[fam]) { s._seenTypes[fam] = 1; snd(s, fam); }   // 每波每家族只响一次
+      s.spawnTimer = it.gap * (C.BALANCE ? C.BALANCE.SPAWN_GAP : 1);
+    }
     if (!s.spawnQueue.length) s.phase = 'fighting';
   }
   moveEnemies(s, dt);
@@ -256,15 +271,15 @@ function update(s, dt) {
   // 障碍物被击破：给金币、腾出可建位
   if (s.obstacles.length) {
     const live = [];
-    for (const o of s.obstacles) { if (o.hitT > 0) o.hitT -= dt; if (o.hp <= 0) { const og = Math.max(1, Math.round(o.gold * (C.BALANCE ? C.BALANCE.GOLD : 1))); s.gold += og; pushFloat(s, o.x, o.y, '+' + og, '#ffd23f'); } else live.push(o); }
+    for (const o of s.obstacles) { if (o.hitT > 0) o.hitT -= dt; if (o.hp <= 0) { const og = Math.max(1, Math.round(o.gold * (C.BALANCE ? C.BALANCE.GOLD : 1))); s.gold += og; pushFloat(s, o.x, o.y, '+' + og, '#ffd23f'); snd(s, 'ob_break'); } else live.push(o); }
     s.obstacles = live;
   }
   if (s.focusId && !s.enemies.some((e) => e.id === s.focusId) && !s.obstacles.some((o) => o.id === s.focusId)) s.focusId = 0;
   if (s.phase === 'fighting' && s.enemies.length === 0) {
     s.gold += Math.round(s.level.waveBonus(s.wave) * (C.BALANCE ? C.BALANCE.GOLD : 1));
-    if (s.wave >= s.totalWaves) s.phase = 'won'; else { s.phase = 'ready'; s.nextTimer = s.betweenDelay; }
+    if (s.wave >= s.totalWaves) { s.phase = 'won'; snd(s, 'win'); } else { s.phase = 'ready'; s.nextTimer = s.betweenDelay; snd(s, 'waveclear'); }
   }
-  if (s.lives <= 0) { s.lives = 0; s.phase = 'lost'; }
+  if (s.lives <= 0 && s.phase !== 'lost') { s.lives = 0; s.phase = 'lost'; snd(s, 'lose'); }
 }
 
 function moveEnemies(s, dt) {
@@ -288,8 +303,8 @@ function moveEnemies(s, dt) {
   }
   const alive = [];
   for (const e of s.enemies) {
-    if (e.reached) { s.lives -= e.def.boss ? 5 : 1; continue; }
-    if (e.hp <= 0) { onDeath(s, e); continue; }
+    if (e.reached) { s.lives -= e.def.boss ? 5 : 1; snd(s, 'leak'); continue; }
+    if (e.hp <= 0) { onDeath(s, e); snd(s, e.def.boss ? 'die_boss' : 'die'); continue; }
     alive.push(e);
   }
   s.enemies = alive;
@@ -348,6 +363,7 @@ function runTowers(s, dt) {
 
 function fire(s, x, y, target, st) {
   const bl = st.bullet || { color: '#fff', speed: 600, r: 5 };
+  snd(s, 'shoot_' + (st.attack || 'single'));
   const dmg = st.dmg * (C.BALANCE ? C.BALANCE.TOWER_DMG : 1);   // 全局塔伤系数(中等偏难)
   s.bullets.push({ x, y, sx: x, sy: y, target, dmg, speed: bl.speed, color: bl.color, r: bl.r,
     attack: st.attack, splash: st.splash, slow: st.slow, slowDur: st.slowDur, dot: st.dot, dotDur: st.dotDur,

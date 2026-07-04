@@ -915,6 +915,9 @@
   $('hLevels').onclick = showMenu; $('hCodex').onclick = showCodex; $('hShop').onclick = showShop; $('hSet').onclick = openSettings;
   $('shopBack').onclick = showHome; $('dexBack').onclick = showHome; $('mapBack').onclick = showHome;
   $('speedBtn').onclick = () => { speed = speed === 1 ? 2 : speed === 2 ? 3 : 1; setNum('speedNum', speed, 14); };
+  const syncMute = () => { $('muteIc').textContent = SND.isMuted() ? '🔇' : '🔊'; };
+  $('muteBtn').onclick = () => { SND.setMuted(!SND.isMuted()); syncMute(); };
+  syncMute();
   $('ovReplay').onclick = () => startLevel(level.id); $('ovNext').onclick = () => startLevel(Math.min(40, level.id + 1)); $('ovMenu').onclick = showMenu;
 
   /* ---------- 轻量过渡横幅（开场/过关/失败/Boss来袭） ----------
@@ -976,7 +979,7 @@
 
   /* ---------- 主循环 ---------- */
   let last = 0;
-  function frame(t) { if (!last) last = t; let dt = (t - last) / 1000; last = t; if (dt > .05) dt = .05; dt *= speed; anim += dt; if (state && $('unlock').style.display !== 'flex' && !cutBusy && !settingsBusy) { if (tut.active && state.towers.length > 0) tutOnEvent('build'); if (!paused && !tut.active) E.update(state, dt); render(); syncHud(); if (tut.active) renderTutStep(); } requestAnimationFrame(frame); }
+  function frame(t) { if (!last) last = t; let dt = (t - last) / 1000; last = t; if (dt > .05) dt = .05; dt *= speed; anim += dt; if (state && $('unlock').style.display !== 'flex' && !cutBusy && !settingsBusy) { if (tut.active && state.towers.length > 0) tutOnEvent('build'); if (!paused && !tut.active) E.update(state, dt); if (window.SND) { SND.consume(state); SND.bgm(state.phase === 'won' || state.phase === 'lost' ? null : (state.spawnQueue && state.spawnQueue.some((it) => it.boss)) || state.enemies.some((e) => e.def.boss) ? 'boss' : 'main'); } render(); syncHud(); if (tut.active) renderTutStep(); } requestAnimationFrame(frame); }
   requestAnimationFrame(frame);
 
   const q = new URLSearchParams(location.search), pn = parseInt(q.get('play') || '0', 10);
