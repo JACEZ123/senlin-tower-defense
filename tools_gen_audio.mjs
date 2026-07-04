@@ -18,8 +18,8 @@ const OUT = 'web/assets/audio'; fs.mkdirSync(OUT, { recursive: true });
 
 /* 条目:type=music 走 music_generation(BGM/长音);type=sfx 也走 music 但只要几秒,截短。 */
 const ITEMS = [
-  { id: 'bgm_main', type: 'music', secs: 160, prompt: '小程序游戏背景音乐,可爱欢快风格,纯乐器,无人声,无歌词,无哼唱。欢快乐器,轻松氛围。30s音乐' },
-  { id: 'bgm_boss', type: 'music', secs: 140, prompt: '小程序游戏Boss战背景音乐,紧张激烈风格,纯乐器,无人声,无歌词,无哼唱。急促鼓点,压迫氛围。30s音乐' },
+  { id: 'bgm_main', type: 'music', secs: 120, prompt: '纯音乐,电子音乐,欢快,无人声,轻松纯音乐' },
+  { id: 'bgm_boss', type: 'music', secs: 120, prompt: '纯音乐,电子音乐,紧张激烈,无人声,Boss战斗纯音乐' },
   { id: 'wave',     type: 'sfx', secs: 3, prompt: '游戏波次开始号角,短促上扬的小号信号音,单音效' },
   { id: 'boss',     type: 'sfx', secs: 5, prompt: '巨兽出场低沉号角与战鼓,威胁感,单音效' },
   { id: 'spawn_boss', type: 'sfx', secs: 4, prompt: '巨大怪物咆哮低吼,单音效' },
@@ -33,7 +33,7 @@ async function genMusic(item) {
   const res = await fetch(url, {
     method: 'POST',
     headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model: 'music-1.5', prompt: item.prompt, lyrics: item.lyrics || (item.type === 'music' ? '[intro]\n[inst]\n[outro]' : '[intro]'), audio_setting: { sample_rate: 44100, bitrate: 128000, format: 'mp3' } }),
+    body: JSON.stringify({ model: 'music-2.5', prompt: item.prompt, lyrics: item.lyrics || (item.type === 'music' ? '[intro]\n[inst]\n[outro]' : '[intro]'), audio_setting: { sample_rate: 44100, bitrate: 128000, format: 'mp3' } }),
   });
   const j = await res.json();
   const hex = j?.data?.audio;                       // hex 编码 mp3
