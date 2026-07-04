@@ -18,8 +18,8 @@ const OUT = 'web/assets/audio'; fs.mkdirSync(OUT, { recursive: true });
 
 /* 条目:type=music 走 music_generation(BGM/长音);type=sfx 也走 music 但只要几秒,截短。 */
 const ITEMS = [
-  { id: 'bgm_main', type: 'music', secs: 160, prompt: '纯音乐器乐曲,绝对没有人声、没有歌词、没有哼唱。轻快可爱的森林冒险游戏背景音乐,八音盒、木笛、拨弦、轻打击乐,循环感强,活泼但不吵闹,instrumental only, no vocals, no singing, no humming' },
-  { id: 'bgm_boss', type: 'music', secs: 140, prompt: '纯音乐器乐曲,绝对没有人声、没有歌词、没有哼唱。紧张激烈的Boss战斗背景音乐,急促战鼓、铜管、弦乐震音,压迫感强,instrumental only, no vocals, no singing, no humming' },
+  { id: 'bgm_main', type: 'music', secs: 160, prompt: '小程序游戏背景音乐,可爱欢快风格,纯乐器,无人声,无歌词,无哼唱。欢快乐器,轻松氛围。30s音乐' },
+  { id: 'bgm_boss', type: 'music', secs: 140, prompt: '小程序游戏Boss战背景音乐,紧张激烈风格,纯乐器,无人声,无歌词,无哼唱。急促鼓点,压迫氛围。30s音乐' },
   { id: 'wave',     type: 'sfx', secs: 3, prompt: '游戏波次开始号角,短促上扬的小号信号音,单音效' },
   { id: 'boss',     type: 'sfx', secs: 5, prompt: '巨兽出场低沉号角与战鼓,威胁感,单音效' },
   { id: 'spawn_boss', type: 'sfx', secs: 4, prompt: '巨大怪物咆哮低吼,单音效' },
