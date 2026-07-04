@@ -1,0 +1,4 @@
+游戏音频素材来源(CC0 公共领域,可商用,无需署名):
+- BGM(bgm_main/bgm_boss):Juhani Junkala《4/5 Chiptunes》(OpenGameArt,CC0)
+- 音效(wave/boss/spawn_boss/win/lose/die_boss/coin/build/upgrade/branch/ob_break):Juhani Junkala《The Essential Retro Video Game Sound Effects Collection(512 sounds)》(OpenGameArt,CC0)
+- 其余音效为 WebAudio 程序化合成(web/audio.js)
