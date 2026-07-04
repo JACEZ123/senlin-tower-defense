@@ -17,8 +17,14 @@ window.SND = (function () {
     if (ctx.state === 'suspended') ctx.resume();
     return ctx;
   }
-  // 首次用户手势解锁音频(浏览器策略)
-  for (const ev of ['pointerdown', 'keydown']) window.addEventListener(ev, () => { ac(); tryBgm(); }, { once: true, capture: true });
+  // 用户手势解锁音频(浏览器策略):常驻监听,直到 BGM 真正播起来才解绑。
+  // 不能用 once——若手势发生在 bgmName 还没设时(如加载页点一下),会白白消耗掉唯一的解锁机会。
+  function unlock() {
+    ac();
+    tryBgm();
+    if (bgmEl && !bgmEl.paused) for (const ev of ['pointerdown', 'keydown', 'touchend', 'click']) window.removeEventListener(ev, unlock, true);
+  }
+  for (const ev of ['pointerdown', 'keydown', 'touchend', 'click']) window.addEventListener(ev, unlock, { capture: true });
 
   // ---------- 文件音效(MiniMax 成品,存在则优先) ----------
   const fileTried = {};

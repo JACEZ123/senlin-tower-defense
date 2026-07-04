@@ -982,12 +982,13 @@
     const fill = $('ldFill'), pct = $('ldPct'), box = $('loading');
     // 用主题草原背景衬底
     box.style.backgroundImage = 'url(assets/b_grass.png)';
+    if (window.SND) SND.bgm('main');   // 提前把 BGM 设为待播:加载期间任意点击即可解锁,读条一完立即出声
     let v = 0; box.style.display = 'flex';
     const tick = () => {
       v = Math.min(100, v + 6 + Math.random() * 12);
       fill.style.width = v + '%'; pct.textContent = Math.floor(v) + '%';
       if (v < 100) setTimeout(tick, 130 + Math.random() * 120);
-      else setTimeout(() => { box.style.opacity = '0'; box.style.transition = 'opacity .45s'; setTimeout(() => { box.style.display = 'none'; then(); }, 460); }, 350);
+      else setTimeout(() => { box.style.opacity = '0'; box.style.transition = 'opacity .45s'; setTimeout(() => { box.style.display = 'none'; if (window.SND) SND.bgm('main'); then(); }, 460); }, 350);
     };
     tick();
   }
