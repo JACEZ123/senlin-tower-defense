@@ -33,7 +33,7 @@ async function genMusic(item) {
   const res = await fetch(url, {
     method: 'POST',
     headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model: 'music-01', prompt: item.prompt, audio_setting: { sample_rate: 44100, bitrate: 128000, format: 'mp3' } }),
+    body: JSON.stringify({ model: 'music-1.5', prompt: item.prompt, lyrics: item.lyrics || '[intro]', audio_setting: { sample_rate: 44100, bitrate: 128000, format: 'mp3' } }),
   });
   const j = await res.json();
   const hex = j?.data?.audio;                       // hex 编码 mp3
@@ -49,8 +49,14 @@ for (const item of ITEMS) {
   if (!only && fs.existsSync(out)) { console.log(`${item.id} 已存在,跳过`); continue; }
   try {
     const buf = await genMusic(item);
-    fs.writeFileSync(out, buf);
-    console.log(`${item.id} OK (${(buf.length / 1024).toFixed(0)}KB)`);
+    const rawf = out + '.raw.mp3';
+    fs.writeFileSync(rawf, buf);
+    // 截到目标时长 + 尾部淡出(音效不要拖) + 响度统一
+    const { execFileSync } = await import('child_process');
+    execFileSync('ffmpeg', ['-y', '-v', 'error', '-i', rawf, '-t', String(item.secs),
+      '-af', `afade=t=out:st=${Math.max(0, item.secs - 0.8)}:d=0.8,loudnorm=I=-18`, out]);
+    fs.unlinkSync(rawf);
+    console.log(`${item.id} OK (${(fs.statSync(out).size / 1024).toFixed(0)}KB, ${item.secs}s)`);
     ok++;
   } catch (e) { console.error(`${item.id} FAIL: ${e.message.slice(0, 200)}`); fail++; }
 }
