@@ -137,7 +137,7 @@ function buildWave(level, w, waveCount) {
   // Boss：固定第 10 波（末波）末尾登场
   if (w === waveCount) list.push({ type: pickBoss(level), gap: 1.6, boss: true });
   // 强度：血量随关卡/波次爬升；速度前期慢、后期加速
-  const hpMul = (1 + (level - 1) * 0.05) * (1 + (w - 1) * 0.05) * (early ? 0.6 : 1);   // 前 3 波血量缓冲（开局金极少,只建得起 1 座塔）
+  const hpMul = (1 + (level - 1) * 0.05) * (1 + (w - 1) * 0.18) * (early ? 0.6 : 1);   // 波内血量陡增:后段波次总压力必须超过单塔输出上限,逼多塔运营   // 前 3 波血量缓冲（开局金极少,只建得起 1 座塔）
   const baseSp = 1 + Math.min(0.45, (level - 1) * 0.009);
   const waveSp = early ? 0.7 : (w <= 5 ? 0.92 : 1 + Math.min(0.28, (w - 5) * 0.055));   // 前期慢，后期越来越快
   const spMul = baseSp * waveSp;

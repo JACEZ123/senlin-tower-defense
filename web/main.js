@@ -2,7 +2,7 @@
 (async function () {
   const mods = {};
   const req = (p) => mods[p.replace(/^\.\//, '').replace(/^\.\.\/game\//, '').replace(/\.js$/, '')];
-  async function load(name) { const src = await (await fetch(`game/${name}.js`)).text(); const m = { exports: {} }; new Function('module', 'exports', 'require', src)(m, m.exports, req); mods[name] = m.exports; }
+  async function load(name) { const src = await (await fetch(`game/${name}.js?t=${Date.now()}`, { cache: 'no-store' })).text(); const m = { exports: {} }; new Function('module', 'exports', 'require', src)(m, m.exports, req); mods[name] = m.exports; }
   await load('config'); await load('anim'); await load('levels'); await load('engine');
   const C = mods.config, ANIM = mods.anim, LV = mods.levels, E = mods.engine, THEME = LV.THEME_NAME;
 
