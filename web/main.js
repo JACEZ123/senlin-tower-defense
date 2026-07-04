@@ -926,9 +926,6 @@
   $('hLevels').onclick = showMenu; $('hCodex').onclick = showCodex; $('hShop').onclick = showShop; $('hSet').onclick = openSettings;
   $('shopBack').onclick = showHome; $('dexBack').onclick = showHome; $('mapBack').onclick = showHome;
   $('speedBtn').onclick = () => { speed = speed === 1 ? 2 : speed === 2 ? 3 : 1; setNum('speedNum', speed, 14); };
-  const syncMute = () => { $('muteIc').textContent = SND.isMuted() ? '🔇' : '🔊'; };
-  $('muteBtn').onclick = () => { SND.setMuted(!SND.isMuted()); syncMute(); };
-  syncMute();
   $('ovReplay').onclick = () => startLevel(level.id); $('ovNext').onclick = () => startLevel(Math.min(40, level.id + 1)); $('ovMenu').onclick = showMenu;
 
   /* ---------- 轻量过渡横幅（开场/过关/失败/Boss来袭） ----------
