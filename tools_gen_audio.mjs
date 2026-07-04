@@ -18,8 +18,8 @@ const OUT = 'web/assets/audio'; fs.mkdirSync(OUT, { recursive: true });
 
 /* 条目:type=music 走 music_generation(BGM/长音);type=sfx 也走 music 但只要几秒,截短。 */
 const ITEMS = [
-  { id: 'bgm_main', type: 'music', secs: 60, prompt: '轻快可爱的森林冒险游戏背景音乐,八音盒+木笛+轻打击乐,循环感强,无人声,活泼但不吵闹' },
-  { id: 'bgm_boss', type: 'music', secs: 45, prompt: '紧张激烈的Boss战斗背景音乐,急促鼓点+铜管+弦乐,压迫感强,无人声' },
+  { id: 'bgm_main', type: 'music', secs: 160, prompt: '纯音乐器乐曲,绝对没有人声、没有歌词、没有哼唱。轻快可爱的森林冒险游戏背景音乐,八音盒、木笛、拨弦、轻打击乐,循环感强,活泼但不吵闹,instrumental only, no vocals, no singing, no humming' },
+  { id: 'bgm_boss', type: 'music', secs: 140, prompt: '纯音乐器乐曲,绝对没有人声、没有歌词、没有哼唱。紧张激烈的Boss战斗背景音乐,急促战鼓、铜管、弦乐震音,压迫感强,instrumental only, no vocals, no singing, no humming' },
   { id: 'wave',     type: 'sfx', secs: 3, prompt: '游戏波次开始号角,短促上扬的小号信号音,单音效' },
   { id: 'boss',     type: 'sfx', secs: 5, prompt: '巨兽出场低沉号角与战鼓,威胁感,单音效' },
   { id: 'spawn_boss', type: 'sfx', secs: 4, prompt: '巨大怪物咆哮低吼,单音效' },
@@ -33,7 +33,7 @@ async function genMusic(item) {
   const res = await fetch(url, {
     method: 'POST',
     headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model: 'music-1.5', prompt: item.prompt, lyrics: item.lyrics || '[intro]', audio_setting: { sample_rate: 44100, bitrate: 128000, format: 'mp3' } }),
+    body: JSON.stringify({ model: 'music-1.5', prompt: item.prompt, lyrics: item.lyrics || (item.type === 'music' ? '[intro]\n[inst]\n[outro]' : '[intro]'), audio_setting: { sample_rate: 44100, bitrate: 128000, format: 'mp3' } }),
   });
   const j = await res.json();
   const hex = j?.data?.audio;                       // hex 编码 mp3
@@ -51,10 +51,20 @@ for (const item of ITEMS) {
     const buf = await genMusic(item);
     const rawf = out + '.raw.mp3';
     fs.writeFileSync(rawf, buf);
-    // 截到目标时长 + 尾部淡出(音效不要拖) + 响度统一
     const { execFileSync } = await import('child_process');
-    execFileSync('ffmpeg', ['-y', '-v', 'error', '-i', rawf, '-t', String(item.secs),
-      '-af', `afade=t=out:st=${Math.max(0, item.secs - 0.8)}:d=0.8,loudnorm=I=-18`, out]);
+    if (item.type === 'music') {
+      // BGM:交叉淡化自拼 3 遍成长循环,再截到目标时长(游戏里 loop 播放)
+      const dur = parseFloat(execFileSync('ffprobe', ['-v','error','-show_entries','format=duration','-of','csv=p=0', rawf]).toString());
+      const body = Math.max(4, dur - 1);
+      execFileSync('ffmpeg', ['-y','-v','error','-i', rawf,'-i', rawf,'-i', rawf,
+        '-filter_complex', `[0][1]acrossfade=d=2:c1=tri:c2=tri[a01];[a01][2]acrossfade=d=2:c1=tri:c2=tri[aa];[aa]atrim=0:${item.secs},afade=t=out:st=${item.secs-2}:d=2,loudnorm=I=-18[o]`,
+        '-map','[o]', out]);
+      void body;
+    } else {
+      // 音效:截短 + 尾部淡出 + 响度统一
+      execFileSync('ffmpeg', ['-y', '-v', 'error', '-i', rawf, '-t', String(item.secs),
+        '-af', `afade=t=out:st=${Math.max(0, item.secs - 0.8)}:d=0.8,loudnorm=I=-18`, out]);
+    }
     fs.unlinkSync(rawf);
     console.log(`${item.id} OK (${(fs.statSync(out).size / 1024).toFixed(0)}KB, ${item.secs}s)`);
     ok++;
